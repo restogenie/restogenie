@@ -1,0 +1,90 @@
+
+> restogenie@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.38:3000
+
+✓ Starting...
+✓ Ready in 500ms
+ GET / 200 in 674ms (compile: 558ms, render: 116ms)
+ GET / 200 in 37ms (compile: 5ms, render: 31ms)
+ GET /dashboard 200 in 480ms (compile: 465ms, render: 14ms)
+ GET /dashboard 200 in 144ms (compile: 6ms, render: 137ms)
+ GET /customers/bf8c0451-6a4d-45ac-b415-ad85ec85bcbc 404 in 286ms (compile: 252ms, render: 34ms)
+✓ Compiled in 20ms
+ GET / 200 in 64ms (compile: 12ms, render: 52ms)
+ GET /dashboard 200 in 87ms (compile: 58ms, render: 29ms)
+ GET /dashboard 200 in 118ms (compile: 4ms, render: 114ms)
+ GET / 200 in 35ms (compile: 5ms, render: 30ms)
+ GET /dashboard 200 in 19ms (compile: 7ms, render: 12ms)
+ GET / 200 in 43ms (compile: 6ms, render: 36ms)
+ GET /dashboard 200 in 25ms (compile: 5ms, render: 19ms)
+ GET / 200 in 42ms (compile: 5ms, render: 37ms)
+ GET /dashboard 200 in 36ms (compile: 10ms, render: 26ms)
+ GET / 200 in 31ms (compile: 4ms, render: 27ms)
+ GET / 200 in 27ms (compile: 5ms, render: 22ms)
+ GET /wizard 404 in 34ms (compile: 5ms, render: 29ms)
+ GET / 200 in 31ms (compile: 1602µs, render: 30ms)
+ GET /dashboard 200 in 43ms (compile: 9ms, render: 34ms)
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Compiled in 15ms
+ GET / 404 in 703ms (compile: -90728µs, proxy.ts: 701ms, render: 93ms)
+⨯ The file "./src/proxy.ts" must export a function, either as a default export or as a named "proxy" export.
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+✓ Compiled in 104ms
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+ GET / 404 in 51ms (compile: -5810µs, proxy.ts: 48ms, render: 8ms)
+✓ Compiled in 17ms
+ GET /login 200 in 335ms (compile: 254ms, proxy.ts: 4ms, render: 76ms)
+ GET /login 200 in 26ms (compile: 4ms, proxy.ts: 2ms, render: 21ms)
+ GET /dashboard 200 in 65ms (compile: 46ms, proxy.ts: 3ms, render: 16ms)
+ GET /dashboard 200 in 26ms (compile: 3ms, proxy.ts: 3ms, render: 21ms)
+✓ Compiled in 15ms
+ GET /dashboard 200 in 130ms (compile: 45ms, proxy.ts: 4ms, render: 81ms)
+ GET /dashboard 200 in 28ms (compile: 1857µs, proxy.ts: 3ms, render: 24ms)
+✓ Compiled in 24ms
+ GET /dashboard 200 in 181ms (compile: 64ms, proxy.ts: 20ms, render: 97ms)
+✓ Compiled in 0ms
+ GET /dashboard 404 in 339ms (compile: 147ms, proxy.ts: 7ms, render: 185ms)
+ GET /dashboard 200 in 182ms (compile: 41ms, proxy.ts: 24ms, render: 117ms)
+ GET /dashboard 200 in 42ms (compile: 3ms, proxy.ts: 8ms, render: 31ms)
+ GET /dashboard 200 in 198ms (compile: 53ms, proxy.ts: 25ms, render: 119ms)
+ GET /dashboard 200 in 35ms (compile: 3ms, proxy.ts: 4ms, render: 29ms)
+ GET /dashboard 200 in 40ms (compile: 3ms, proxy.ts: 4ms, render: 33ms)
+ GET /dashboard 200 in 44ms (compile: 3ms, proxy.ts: 3ms, render: 38ms)
+ GET /dashboard 200 in 46ms (compile: 2ms, proxy.ts: 6ms, render: 38ms)
+ GET /dashboard 200 in 44ms (compile: 4ms, proxy.ts: 5ms, render: 35ms)
+ GET /dashboard 200 in 46ms (compile: 4ms, proxy.ts: 4ms, render: 38ms)
+ GET /dashboard 200 in 58ms (compile: 5ms, proxy.ts: 5ms, render: 48ms)
+ GET /dashboard 200 in 58ms (compile: 3ms, proxy.ts: 5ms, render: 49ms)
+ GET /dashboard 200 in 58ms (compile: 4ms, proxy.ts: 8ms, render: 46ms)
+ GET /dashboard 200 in 51ms (compile: 5ms, proxy.ts: 6ms, render: 40ms)
+✓ Compiled in 1126ms
+ GET /dashboard 200 in 98ms (compile: 52ms, proxy.ts: 3ms, render: 43ms)
+ GET /dashboard 200 in 27ms (compile: 1870µs, proxy.ts: 2ms, render: 23ms)
+✓ Compiled in 38ms
+ GET /dashboard 200 in 186ms (compile: 18ms, proxy.ts: 26ms, render: 142ms)
+ GET /dashboard 200 in 36ms (compile: 4ms, proxy.ts: 3ms, render: 29ms)
+✓ Compiled in 28ms

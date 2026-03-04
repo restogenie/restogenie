@@ -1,0 +1,16 @@
+{
+    "crons": [
+        {
+            "path": "/api/v1/sync/payhere",
+            "schedule": "0 2 * * *"
+        },
+        {
+            "path": "/api/v1/sync/easypos",
+            "schedule": "10 2 * * *"
+        },
+        {
+            "path": "/api/v1/sync/smartro",
+            "schedule": "20 2 * * *"
+        }
+    ]
+}
