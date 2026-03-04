@@ -11,10 +11,13 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import { toast } from "react-hot-toast";
+import { useState } from "react";
+import { AddStoreModal } from "./AddStoreModal";
 
 export function ClientHeader() {
     const { stores, currentStore, setCurrentStore, isLoading } = useStore();
     const router = useRouter();
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     const handleLogout = () => {
         document.cookie = "admin_token=; path=/; max-age=0;";
@@ -40,8 +43,12 @@ export function ClientHeader() {
             <div className="flex items-center gap-4">
                 {!isLoading && stores.length > 0 && (
                     <Select
-                        value={currentStore?.id.toString() || ""}
+                        value={currentStore?.id.toString()}
                         onValueChange={(val) => {
+                            if (val === "ADD_NEW_STORE") {
+                                setIsAddModalOpen(true);
+                                return;
+                            }
                             const selected = stores.find(s => s.id.toString() === val);
                             if (selected) setCurrentStore(selected);
                         }}
@@ -55,6 +62,9 @@ export function ClientHeader() {
                                     {store.name}
                                 </SelectItem>
                             ))}
+                            <SelectItem value="ADD_NEW_STORE" className="text-blue-600 font-bold border-t border-gray-100 mt-1 cursor-pointer">
+                                ➕ 신규 사업장 추가
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 )}
@@ -71,6 +81,8 @@ export function ClientHeader() {
                     <LogOut className="w-4 h-4" />
                 </button>
             </div>
+
+            <AddStoreModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
         </header>
     );
 }

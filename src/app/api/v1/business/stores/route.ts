@@ -34,3 +34,45 @@ export async function GET() {
         return NextResponse.json({ detail: "Internal Server Error" }, { status: 500 });
     }
 }
+
+export async function POST(request: Request) {
+    try {
+        const user = await getUserFromSession();
+        if (!user) {
+            return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = await request.json().catch(() => ({}));
+        const { businessName, businessNumber, businessCondition, businessType, openingDate, storePhone } = body;
+
+        if (!businessName || !businessNumber || !businessCondition || !businessType || !openingDate) {
+            return NextResponse.json({ detail: "Missing required fields" }, { status: 400 });
+        }
+
+        const newStore = await db.store.create({
+            data: {
+                user_id: user.id,
+                name: businessName,
+                business_number: businessNumber,
+                business_condition: businessCondition,
+                business_type: businessType,
+                opening_date: openingDate,
+                phone: storePhone || null,
+            }
+        });
+
+        // Initialize empty pos connection row for easypos
+        await db.posConnection.create({
+            data: {
+                store_id: newStore.id,
+                vendor: "easypos",
+                is_active: false
+            }
+        });
+
+        return NextResponse.json({ status: "success", store: newStore });
+    } catch (error: any) {
+        console.error("Error creating store:", error);
+        return NextResponse.json({ detail: "Internal Server Error" }, { status: 500 });
+    }
+}
