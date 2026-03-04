@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Lock } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -21,8 +23,7 @@ export default function LoginPage() {
 
         try {
             const formData = new URLSearchParams();
-            // OAuth2 requires username, any string works since our backend only checks password
-            formData.append("username", "admin");
+            formData.append("username", email);
             formData.append("password", password);
 
             const res = await fetch(`/api/v1/auth/login`, {
@@ -34,7 +35,8 @@ export default function LoginPage() {
             });
 
             if (!res.ok) {
-                throw new Error("비밀번호가 일치하지 않습니다.");
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || "이메일 또는 비밀번호가 일치하지 않습니다.");
             }
 
             const data = await res.json();
@@ -56,42 +58,63 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-toss-bg">
-            <Card className="w-full max-w-sm shadow-sm border-toss-border/40">
-                <CardHeader className="space-y-1 text-center">
-                    <div className="flex justify-center mb-4">
-                        <div className="w-12 h-12 bg-toss-blue/10 rounded-full flex items-center justify-center">
-                            <Lock className="w-6 h-6 text-toss-blue" />
-                        </div>
-                    </div>
-                    <CardTitle className="text-2xl font-semibold tracking-tight">관리자 로그인</CardTitle>
-                    <CardDescription className="text-toss-gray">
-                        RestoGenie 대시보드 접근을 위해 비밀번호를 입력해주세요.
+        <div className="flex min-h-screen w-full items-center justify-center bg-toss-bg p-4 flex-col gap-6">
+            <div className="flex flex-col items-center">
+                <div className="w-12 h-12 bg-toss-blue text-white font-bold flex items-center justify-center rounded-xl mb-3 shadow-sm text-xl">
+                    R
+                </div>
+                <h1 className="text-xl font-bold text-toss-dark">RestoGenie</h1>
+            </div>
+
+            <Card className="w-full max-w-[400px] shadow-sm border-toss-border/40">
+                <CardHeader className="space-y-1 text-center pt-8">
+                    <CardTitle className="text-2xl font-bold tracking-tight text-[#191F28]">로그인</CardTitle>
+                    <CardDescription className="text-toss-gray text-[15px] pt-1">
+                        RestoGenie 계정으로 로그인해주세요.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-6">
                     <form onSubmit={handleLogin} className="space-y-4">
-                        <div className="space-y-2">
+                        <div className="space-y-3">
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="이메일 주소"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="h-[52px] px-4 rounded-xl bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-toss-blue/30 text-[15px]"
+                            />
                             <Input
                                 id="password"
                                 type="password"
-                                placeholder="관리자 비밀번호"
+                                placeholder="비밀번호"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="h-12 focus-visible:ring-toss-blue/30"
+                                className="h-[52px] px-4 rounded-xl bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-toss-blue/30 text-[15px]"
                             />
                         </div>
                         {error && <p className="text-sm text-red-500 font-medium text-center">{error}</p>}
                         <Button
                             type="submit"
-                            className="w-full h-12 bg-toss-blue hover:bg-toss-blueHover text-white font-medium shadow-sm transition-all"
+                            className="w-full h-[52px] rounded-xl bg-toss-blue hover:bg-toss-blueHover text-white font-semibold text-[15px] shadow-sm transition-all mt-2"
                             disabled={loading}
                         >
                             {loading ? "로그인 중..." : "로그인"}
                         </Button>
                     </form>
                 </CardContent>
+                <CardFooter className="flex flex-col border-t border-[#F2F4F6] p-6 bg-[#FAFAFA] rounded-b-xl gap-4">
+                    <div className="text-center text-sm text-[#8B95A1]">
+                        아직 계정이 없으신가요?
+                    </div>
+                    <Link href="/signup" className="w-full">
+                        <Button variant="outline" className="w-full h-[52px] rounded-xl font-semibold text-[#4E5968] border-[#E5E8EB] hover:bg-[#F2F4F6] text-[15px]">
+                            회원가입하기
+                        </Button>
+                    </Link>
+                </CardFooter>
             </Card>
         </div>
     );

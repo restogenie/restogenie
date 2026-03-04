@@ -7,9 +7,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id               Int      @id @default(autoincrement())
+  email            String   @unique
+  password_hash    String
+  name             String
+  phone            String?
+  agreed_terms     Boolean  @default(false)
+  agreed_privacy   Boolean  @default(false)
+  agreed_marketing Boolean  @default(false)
+  created_at       DateTime @default(now())
+
+  stores           Store[]
+
+  @@map("users")
+}
+
+model Store {
+  id                 Int      @id @default(autoincrement())
+  user_id            Int
+  name               String
+  business_number    String   // 사업자등록번호
+  business_condition String?  // 업태
+  business_type      String?  // 업종
+  opening_date       DateTime? @db.Date // 개업일자
+  phone              String?  // 사업장 전화번호
+  created_at         DateTime @default(now())
+
+  user               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  pos_connections    PosConnection[]
+  sales              Sale[]
+  menu_mappings      MenuMapping[]
+  system_logs        SystemLog[]
+
+  @@index([user_id])
+  @@map("stores")
+}
+
+model PosConnection {
+  id          Int      @id @default(autoincrement())
+  store_id    Int
+  vendor      String   // payhere, easypos, smartro
+  auth_code_1 String?  // API Key, HD_CODE, Auth Key, etc.
+  auth_code_2 String?  // SP_CODE, COMP_NO, etc.
+  auth_code_3 String?  // STORE_CODE, etc.
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  store       Store    @relation(fields: [store_id], references: [id], onDelete: Cascade)
+
+  @@unique([store_id, vendor])
+  @@map("pos_connections")
+}
+
 model Sale {
-  oid                   String   @id // 주문번호(oid)
+  store_id              Int
   provider              String   @default("payhere") // 데이터 제공자 (payhere, easypos, smartro)
+  oid                   String   // 기존 주문번호(oid)
   business_date         DateTime @db.Date // 영업일 (날짜)
   created_at            DateTime // 주문 생성 일시
   order_name            String?  // 주문명
@@ -27,8 +82,11 @@ model Sale {
   delivery_app          String?  // 배달 앱
   delivery_order_no     String?  // 배달 주문번호
 
-  menu_items MenuLineItem[]
+  store                 Store    @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  menu_items            MenuLineItem[]
 
+  @@id([store_id, provider, oid])
+  @@index([store_id])
   @@index([provider])
   @@index([business_date])
   @@map("sales_db")
@@ -36,6 +94,8 @@ model Sale {
 
 model MenuLineItem {
   id                  Int      @id @default(autoincrement())
+  store_id            Int
+  provider            String
   oid                 String
   main_item_seq       Int?     // 메인 메뉴 순번
   created_at          DateTime? // 주문 생성일시 (KST)
@@ -47,32 +107,39 @@ model MenuLineItem {
   option_name         String?  // 옵션명
   option_price        Float?   // 옵션 가격
 
-  sale Sale @relation(fields: [oid], references: [oid], onDelete: Cascade)
+  sale Sale @relation(fields: [store_id, provider, oid], references: [store_id, provider, oid], onDelete: Cascade)
 
-  @@index([oid])
+  @@index([store_id, provider, oid])
   @@map("menu_db")
 }
 
 model MenuMapping {
   id              Int      @id @default(autoincrement())
+  store_id        Int
   provider        String   // e.g. payhere, easypos, smartro
   original_name   String   // The raw string from POS
   normalized_name String   // The master aligned name
   created_at      DateTime? @default(now())
   updated_at      DateTime? @updatedAt
 
-  @@index([provider])
-  @@index([original_name])
+  store           Store    @relation(fields: [store_id], references: [id], onDelete: Cascade)
+
+  @@unique([store_id, provider, original_name])
+  @@index([store_id])
   @@index([normalized_name])
   @@map("menu_mapping_db")
 }
 
 model SystemLog {
   id         Int      @id @default(autoincrement())
+  store_id   Int?
   level      String   @default("INFO") @db.VarChar(50) // INFO, ERROR, WARNING
   source     String   @db.VarChar(100) // e.g., 'PayhereSync', 'Auth', 'Dashboard'
   message    String   @db.Text
   created_at DateTime @default(now())
 
+  store      Store?   @relation(fields: [store_id], references: [id], onDelete: Cascade)
+
+  @@index([store_id])
   @@map("system_logs")
 }

@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { DateTime } from 'luxon';
+import { useStore } from '@/lib/StoreContext';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -22,6 +23,7 @@ interface Mapping {
 }
 
 export default function MappingPage() {
+    const { currentStore } = useStore();
     const [mappings, setMappings] = useState<Mapping[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -33,6 +35,7 @@ export default function MappingPage() {
     const [saving, setSaving] = useState(false);
 
     const fetchMappings = async (isRefresh = false) => {
+        if (!currentStore) return;
         try {
             if (isRefresh) setRefreshing(true);
             const token = document.cookie.split("; ").find((row) => row.startsWith("admin_token="))?.split("=")[1];
@@ -42,7 +45,7 @@ export default function MappingPage() {
                 return;
             }
 
-            const res = await axios.get(`/api/v1/sync/mapping?limit=500`, {
+            const res = await axios.get(`/api/v1/sync/mapping?store_id=${currentStore.id}&limit=500`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
@@ -58,8 +61,10 @@ export default function MappingPage() {
     };
 
     useEffect(() => {
-        fetchMappings();
-    }, []);
+        if (currentStore) {
+            fetchMappings();
+        }
+    }, [currentStore]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,6 +74,7 @@ export default function MappingPage() {
         try {
             const token = document.cookie.split("; ").find((row) => row.startsWith("admin_token="))?.split("=")[1];
             await axios.post(`/api/v1/sync/mapping`, {
+                store_id: currentStore?.id,
                 provider,
                 original_name: originalName,
                 normalized_name: normalizedName

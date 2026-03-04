@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { DateTime } from 'luxon';
 import { format, subDays } from 'date-fns';
+import { useStore } from '@/lib/StoreContext';
 import { FileDown, RefreshCw, ShoppingBag, Coins, Store, CalendarRange } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
@@ -33,6 +34,7 @@ interface SaleInfo {
 }
 
 export default function DashboardPage() {
+    const { currentStore } = useStore();
     const [sales, setSales] = useState<SaleInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -45,6 +47,8 @@ export default function DashboardPage() {
     const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
     const fetchSales = async (isRefresh = false) => {
+        if (!currentStore) return;
+
         try {
             if (isRefresh) setRefreshing(true);
 
@@ -59,7 +63,7 @@ export default function DashboardPage() {
                 return;
             }
 
-            const res = await axios.get(`/api/v1/sync/sales?limit=5000&start_date=${startDate}&end_date=${endDate}`, {
+            const res = await axios.get(`/api/v1/sales?store_id=${currentStore.id}&limit=5000&start_date=${startDate}&end_date=${endDate}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
@@ -105,8 +109,10 @@ export default function DashboardPage() {
     };
 
     useEffect(() => {
-        fetchSales();
-    }, [startDate, endDate]);
+        if (currentStore) {
+            fetchSales();
+        }
+    }, [startDate, endDate, currentStore]);
 
     const downloadExcel = () => {
         if (!sales || sales.length === 0) {

@@ -3,12 +3,14 @@ import { format } from "date-fns";
 
 export class EasyposSyncService {
     private kiccApiUrl = "https://poson.easypos.net/servlet/EasyPosJsonChannelSVL?cmd=TlxSyncEasyposSaleCMD";
+    private storeId: number;
     private kiccHdCode: string;
     private kiccSpCode: string;
 
-    constructor() {
-        this.kiccHdCode = process.env.KICC_HD_CODE || "J2H";
-        this.kiccSpCode = process.env.KICC_SP_CODE || "000003";
+    constructor(storeId: number, hdCode: string, spCode: string) {
+        this.storeId = storeId;
+        this.kiccHdCode = hdCode;
+        this.kiccSpCode = spCode;
     }
 
     private async fetchEasyposData(dateStr: string): Promise<any | null> {
@@ -66,7 +68,7 @@ export class EasyposSyncService {
         const mappings: Record<string, string> = {};
         try {
             const result = await prisma.menuMapping.findMany({
-                where: { provider: "easypos" }
+                where: { store_id: this.storeId, provider: "easypos" }
             });
             for (const m of result) {
                 mappings[m.original_name] = m.normalized_name;
@@ -151,6 +153,8 @@ export class EasyposSyncService {
                 const normProdName = mappings[rawProdName] || rawProdName;
 
                 menuToSave.push({
+                    store_id: this.storeId,
+                    provider: "easypos",
                     oid: uniqueOid,
                     main_item_seq: mainSeq,
                     created_at: currDt,
@@ -173,6 +177,8 @@ export class EasyposSyncService {
                     if (optName === "선택안함") continue;
 
                     menuToSave.push({
+                        store_id: this.storeId,
+                        provider: "easypos",
                         oid: uniqueOid,
                         main_item_seq: mainSeq,
                         created_at: currDt,
@@ -230,6 +236,7 @@ export class EasyposSyncService {
             const bestPhone = rawHp || rawTel || cardPhone || (isNamePhone ? rawName : null);
 
             salesToSave.push({
+                store_id: this.storeId,
                 oid: uniqueOid,
                 provider: "easypos",
                 business_date: targetDate,
@@ -258,11 +265,11 @@ export class EasyposSyncService {
         try {
             await prisma.$transaction(async (tx) => {
                 await tx.menuLineItem.deleteMany({
-                    where: { sale: { provider: "easypos", business_date: targetDate } }
+                    where: { store_id: this.storeId, sale: { provider: "easypos", business_date: targetDate } }
                 });
 
                 await tx.sale.deleteMany({
-                    where: { provider: "easypos", business_date: targetDate }
+                    where: { store_id: this.storeId, provider: "easypos", business_date: targetDate }
                 });
 
                 if (salesToSave.length > 0) {
@@ -275,6 +282,7 @@ export class EasyposSyncService {
 
                 await tx.systemLog.create({
                     data: {
+                        store_id: this.storeId,
                         level: "INFO",
                         source: "EasyposSync",
                         message: `Synced ${salesToSave.length} sales and ${validMenuToSave.length} menu items for ${dateStr}`
@@ -292,6 +300,7 @@ export class EasyposSyncService {
             console.error("Prisma Transaction Failed: ", error);
             await prisma.systemLog.create({
                 data: {
+                    store_id: this.storeId,
                     level: "ERROR",
                     source: "EasyposSync",
                     message: `Database sync failed for ${dateStr}: ${error.message}`

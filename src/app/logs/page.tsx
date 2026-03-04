@@ -6,6 +6,7 @@ import { DateTime } from 'luxon';
 import { RefreshCw, ShieldAlert, CheckCircle2, Info } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useStore } from '@/lib/StoreContext';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -20,11 +21,13 @@ interface Log {
 }
 
 export default function LogsPage() {
+    const { currentStore } = useStore();
     const [logs, setLogs] = useState<Log[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchLogs = async (isRefresh = false) => {
+        if (!currentStore) return;
         try {
             if (isRefresh) setRefreshing(true);
             const token = document.cookie.split("; ").find((row) => row.startsWith("admin_token="))?.split("=")[1];
@@ -34,7 +37,7 @@ export default function LogsPage() {
                 return;
             }
 
-            const res = await axios.get(`/api/v1/system/logs?limit=500`, {
+            const res = await axios.get(`/api/v1/system/logs?store_id=${currentStore.id}&limit=500`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
@@ -53,8 +56,10 @@ export default function LogsPage() {
     };
 
     useEffect(() => {
-        fetchLogs();
-    }, []);
+        if (currentStore) {
+            fetchLogs();
+        }
+    }, [currentStore]);
 
     const formatDate = (isoStr: string) => {
         if (!isoStr) return '-';

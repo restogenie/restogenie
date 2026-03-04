@@ -3,28 +3,26 @@ import { format, parseISO } from "date-fns";
 
 export class PayhereSyncService {
     private baseUrl = "https://openapi.payhere.in/api/v1";
-    private tokens: string[];
+    private storeId: number;
+    private accessToken: string;
 
-    constructor() {
-        // Load tokens from env, supporting comma separated for multiple locations if needed
-        const tokenString = process.env.PAYHERE_ACESS_TOKENS || "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJkZmEzZGI0ZC1iOWFmLTQxMmEtYmI5ZS03YzM0M2ZjNTViZWEiLCJpc3MiOiJwYXloZXJlLmluIiwiaWF0IjoxNzUxMjc3OTI1LCJuYmYiOjE3NTEyNzc5MjUsImV4cCI6MzMzMDgxODY3MjUsInRva2VuX3R5cGUiOiJhY2Nlc3MiLCJzaWQiOiJwaDE3NDQ2MzA3MTY0MzQ1NDA5NzkiLCJhcHBsaWNhdGlvbl9pZCI6ImNmYjRmMzEwLTFkYTAtNDI4MS1hMDQxLTMwYjg2MWY1YWRiMCIsImFwcGxpY2F0aW9uX3N0YXR1cyI6IkFDVElWQVRFRCIsInNjb3BlIjoiIn0.CN7WS-4kQf0xmuuSe3dHQsds00XkzmzO7nqZxt7GSgc";
-        this.tokens = tokenString.split(",");
+    constructor(storeId: number, accessToken: string) {
+        this.storeId = storeId;
+        this.accessToken = accessToken;
     }
 
     private async fetchWithAuth(url: string): Promise<any> {
-        for (const token of this.tokens) {
-            try {
-                const response = await fetch(url, {
-                    headers: { "Authorization": token.trim() }
-                });
-                if (response.ok) {
-                    return await response.json();
-                } else if (response.status === 401) {
-                    continue; // Try next token
-                }
-            } catch (e) {
-                console.error("Fetch error:", e);
+        try {
+            const response = await fetch(url, {
+                headers: { "Authorization": this.accessToken.trim() }
+            });
+            if (response.ok) {
+                return await response.json();
+            } else if (response.status === 401) {
+                console.error("Fetch auth error for store", this.storeId);
             }
+        } catch (e) {
+            console.error("Fetch error:", e);
         }
         return null;
     }
@@ -83,7 +81,7 @@ export class PayhereSyncService {
         const mappings: Record<string, string> = {};
         try {
             const result = await prisma.menuMapping.findMany({
-                where: { provider: "payhere" }
+                where: { store_id: this.storeId, provider: "payhere" }
             });
             for (const m of result) {
                 mappings[m.original_name] = m.normalized_name;
@@ -160,6 +158,7 @@ export class PayhereSyncService {
             const createdAt = this.parseDatetime(order.created_at) || new Date();
 
             salesToSave.push({
+                store_id: this.storeId,
                 oid: oid,
                 provider: "payhere",
                 business_date: targetDate, // Will be cast to Date in DB
@@ -191,6 +190,8 @@ export class PayhereSyncService {
                 if (options.length > 0) {
                     for (const opt of options) {
                         menuToSave.push({
+                            store_id: this.storeId,
+                            provider: "payhere",
                             oid: oid,
                             main_item_seq: mainSeq,
                             created_at: createdAt,
@@ -205,6 +206,8 @@ export class PayhereSyncService {
                     }
                 } else {
                     menuToSave.push({
+                        store_id: this.storeId,
+                        provider: "payhere",
                         oid: oid,
                         main_item_seq: mainSeq,
                         created_at: createdAt,
@@ -226,6 +229,7 @@ export class PayhereSyncService {
                 // Delete existing data for the target date to ensure idempotency
                 await tx.menuLineItem.deleteMany({
                     where: {
+                        store_id: this.storeId,
                         sale: {
                             provider: "payhere",
                             business_date: targetDate
@@ -235,6 +239,7 @@ export class PayhereSyncService {
 
                 await tx.sale.deleteMany({
                     where: {
+                        store_id: this.storeId,
                         provider: "payhere",
                         business_date: targetDate
                     }
@@ -258,6 +263,7 @@ export class PayhereSyncService {
                 // Log System Event
                 await tx.systemLog.create({
                     data: {
+                        store_id: this.storeId,
                         level: "INFO",
                         source: "PayhereSync",
                         message: `Synced ${salesToSave.length} sales and ${menuToSave.length} menu items for ${dateStr}`
@@ -275,6 +281,7 @@ export class PayhereSyncService {
             console.error("Prisma Transaction Failed: ", error);
             await prisma.systemLog.create({
                 data: {
+                    store_id: this.storeId,
                     level: "ERROR",
                     source: "PayhereSync",
                     message: `Database sync failed for ${dateStr}: ${error.message}`

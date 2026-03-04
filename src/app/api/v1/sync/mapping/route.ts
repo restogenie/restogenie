@@ -1,19 +1,27 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getAdminServerSide } from "../../sales/route";
+import { getUserFromSession } from "@/lib/auth";
 
 export async function GET(request: Request) {
-    const admin = await getAdminServerSide(request);
-    if (!admin) {
+    const user = await getUserFromSession();
+    if (!user) {
         return NextResponse.json({ detail: "Could not validate credentials" }, { status: 401 });
     }
 
     try {
         const { searchParams } = new URL(request.url);
+        const storeIdParam = searchParams.get("store_id");
+        if (!storeIdParam) return NextResponse.json({ detail: "store_id is required" }, { status: 400 });
+
+        const storeId = parseInt(storeIdParam, 10);
+        const store = await prisma.store.findFirst({ where: { id: storeId, user_id: user.id } });
+        if (!store) return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+
         const limitParam = searchParams.get("limit") || "100";
         const limit = parseInt(limitParam, 10);
 
         const mappings = await prisma.menuMapping.findMany({
+            where: { store_id: storeId },
             orderBy: { created_at: 'desc' },
             take: limit
         });
@@ -32,22 +40,25 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    const admin = await getAdminServerSide(request);
-    if (!admin) {
+    const user = await getUserFromSession();
+    if (!user) {
         return NextResponse.json({ detail: "Could not validate credentials" }, { status: 401 });
     }
 
     try {
         const body = await request.json();
-        const { provider, original_name, normalized_name } = body;
+        const { store_id, provider, original_name, normalized_name } = body;
 
-        if (!provider || !original_name || !normalized_name) {
+        if (!store_id || !provider || !original_name || !normalized_name) {
             return NextResponse.json({ detail: "Missing required fields" }, { status: 400 });
         }
 
-        // Upsert logic based on original_name and provider
+        const storeId = parseInt(store_id, 10);
+        const store = await prisma.store.findFirst({ where: { id: storeId, user_id: user.id } });
+        if (!store) return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+
         let mapping = await prisma.menuMapping.findFirst({
-            where: { provider, original_name }
+            where: { store_id: storeId, provider, original_name }
         });
 
         if (mapping) {
@@ -57,7 +68,7 @@ export async function POST(request: Request) {
             });
         } else {
             mapping = await prisma.menuMapping.create({
-                data: { provider, original_name, normalized_name }
+                data: { store_id: storeId, provider, original_name, normalized_name }
             });
         }
 

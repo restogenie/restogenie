@@ -3,14 +3,16 @@ import { format, parse } from "date-fns";
 
 export class SmartroSyncService {
     private apiBaseUrl = "https://t-exttran.smilebiz.co.kr/V1/sales";
+    private storeId: number;
     private authKey: string;
     private compNo: string;
     private storeCode: string;
 
-    constructor() {
-        this.authKey = process.env.SMARTRO_AUTH_KEY || "";
-        this.compNo = process.env.SMARTRO_COMP_NO || "";
-        this.storeCode = process.env.SMARTRO_STORE_CODE || "";
+    constructor(storeId: number, authKey: string, compNo: string, storeCode: string) {
+        this.storeId = storeId;
+        this.authKey = authKey;
+        this.compNo = compNo;
+        this.storeCode = storeCode;
     }
 
     private async fetchSmartroApi(endpoint: string, dateStr: string): Promise<any | null> {
@@ -58,7 +60,7 @@ export class SmartroSyncService {
         const mappings: Record<string, string> = {};
         try {
             const result = await prisma.menuMapping.findMany({
-                where: { provider: "smartro" }
+                where: { store_id: this.storeId, provider: "smartro" }
             });
             for (const m of result) {
                 mappings[m.original_name] = m.normalized_name;
@@ -118,6 +120,7 @@ export class SmartroSyncService {
             }
 
             salesToSave.push({
+                store_id: this.storeId,
                 oid: oid,
                 provider: "smartro",
                 business_date: bDate,
@@ -158,6 +161,7 @@ export class SmartroSyncService {
                     const normProdName = mappings[rawProdName] || rawProdName;
 
                     menuToSave.push({
+                        store_id: this.storeId,
                         oid: oid,
                         main_item_seq: mainSeq,
                         created_at: cDt,
@@ -185,6 +189,7 @@ export class SmartroSyncService {
                     const pTotal = parentItem ? Math.abs(parseFloat(parentItem.SUMPRICE || "0")) : 0;
 
                     menuToSave.push({
+                        store_id: this.storeId,
                         oid: oid,
                         main_item_seq: mainSeq,
                         created_at: cDt,
@@ -204,11 +209,11 @@ export class SmartroSyncService {
         try {
             await prisma.$transaction(async (tx) => {
                 await tx.menuLineItem.deleteMany({
-                    where: { sale: { provider: "smartro", business_date: targetDate } }
+                    where: { store_id: this.storeId, sale: { provider: "smartro", business_date: targetDate } }
                 });
 
                 await tx.sale.deleteMany({
-                    where: { provider: "smartro", business_date: targetDate }
+                    where: { store_id: this.storeId, provider: "smartro", business_date: targetDate }
                 });
 
                 if (salesToSave.length > 0) {
@@ -221,6 +226,7 @@ export class SmartroSyncService {
 
                 await tx.systemLog.create({
                     data: {
+                        store_id: this.storeId,
                         level: "INFO",
                         source: "SmartroSync",
                         message: `Synced ${salesToSave.length} sales and ${menuToSave.length} menu items for ${dateStr}`
@@ -238,6 +244,7 @@ export class SmartroSyncService {
             console.error("Prisma Transaction Failed: ", error);
             await prisma.systemLog.create({
                 data: {
+                    store_id: this.storeId,
                     level: "ERROR",
                     source: "SmartroSync",
                     message: `Database sync failed for ${dateStr}: ${error.message}`

@@ -1,5 +1,5 @@
 import ClientAuthLayout from "@/components/ClientAuthLayout";
 
-export default function MappingLayout({ children }: { children: React.ReactNode }) {
+export default function SetupLayout({ children }: { children: React.ReactNode }) {
     return <ClientAuthLayout>{children}</ClientAuthLayout>;
 }
