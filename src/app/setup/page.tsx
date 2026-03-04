@@ -16,22 +16,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans selection:bg-primary/20">
-      <header className="bg-white border-b border-border sticky top-0 z-10 px-6 py-4 flex items-center shadow-sm">
-        <div className="font-bold text-xl text-primary flex items-center">
-          <span className="bg-primary text-white rounded-md p-1 mr-2 px-2 text-sm leading-none flex items-center justify-center">R</span>
-          RestoGenie
-        </div>
-        <nav className="ml-10 hidden md:flex items-center space-x-6 text-sm font-medium text-muted-foreground">
-          <a href="#" className="text-foreground border-b-2 border-primary pb-5 -mb-[21px]">POS 연동 안내</a>
-          <a href="#" className="hover:text-foreground transition-colors">기능 소개</a>
-          <a href="#" className="hover:text-foreground transition-colors">요금제</a>
-        </nav>
-        <div className="ml-auto flex items-center space-x-4">
-          <a href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">로그인</a>
-          <a href="/signup" className="text-sm font-medium bg-primary text-white px-4 py-2 rounded-lg shadow-sm hover:bg-primary/90 transition-colors">무료로 시작하기</a>
-        </div>
-      </header>
+    <div className="min-h-screen bg-transparent font-sans selection:bg-primary/20">
 
       <main className="container mx-auto py-10 px-4 max-w-6xl">
         <div className="mb-8 p-6 bg-white rounded-xl shadow-sm border border-border">
