@@ -16,6 +16,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "RestoGenie",
   description: "다중 POS 동적 데이터 파이프라인 매칭 서비스",
+  manifest: "/manifest.json",
+  themeColor: "#3182F6",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "RestoGenie",
+  },
 };
 
 export default function RootLayout({
@@ -31,6 +38,21 @@ export default function RootLayout({
       <body className="font-sans antialiased text-foreground bg-background">
         <Toaster position="bottom-center" />
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful');
+                  }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

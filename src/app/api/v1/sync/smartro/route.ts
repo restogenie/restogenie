@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { SmartroSyncService } from "@/lib/services/smartro";
 import { format } from "date-fns";
 import { prisma } from "@/lib/db";
+import { sendSystemAlert } from "@/lib/alerts";
 
 export async function POST(request: Request) {
     try {
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
                 const res = await service.runSync(targetDate);
                 results.push({ store_id: storeId, status: "success", data: res });
             } catch (err: any) {
+                await sendSystemAlert(`Smartro Sync Failed for Store ${storeId}`, err.message);
                 results.push({ store_id: storeId, status: "error", error: err.message });
             }
         }
@@ -63,6 +65,7 @@ export async function POST(request: Request) {
         });
     } catch (error: any) {
         console.error("Smartro Sync API Error:", error);
+        await sendSystemAlert(`Smartro Global Sync API Error`, error.message);
         return NextResponse.json(
             { status: "error", message: error.message || "Failed to sync Smartro." },
             { status: 500 }

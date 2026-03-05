@@ -17,12 +17,16 @@ export async function GET(request: Request) {
 
         const storeId = parseInt(storeIdParam, 10);
 
-        // Authorization check: Is this store_id owned by the user?
+        // Authorization check: Is this store_id owned by the user or are they a member?
         const store = await prisma.store.findFirst({
             where: { id: storeId, user_id: user.id }
         });
 
-        if (!store) {
+        const storeMember = await prisma.storeMember.findFirst({
+            where: { store_id: storeId, user_id: user.id }
+        });
+
+        if (!store && !storeMember) {
             return NextResponse.json({ detail: "Forbidden access to this store" }, { status: 403 });
         }
 

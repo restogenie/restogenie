@@ -15,7 +15,9 @@ export async function GET(request: Request) {
 
         const storeId = parseInt(storeIdParam, 10);
         const store = await prisma.store.findFirst({ where: { id: storeId, user_id: user.id } });
-        if (!store) return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+        const storeMember = await prisma.storeMember.findFirst({ where: { store_id: storeId, user_id: user.id } });
+
+        if (!store && !storeMember) return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
 
         const limitParam = searchParams.get("limit") || "100";
         const limit = parseInt(limitParam, 10);
@@ -55,7 +57,9 @@ export async function POST(request: Request) {
 
         const storeId = parseInt(store_id, 10);
         const store = await prisma.store.findFirst({ where: { id: storeId, user_id: user.id } });
-        if (!store) return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+        const storeMember = await prisma.storeMember.findFirst({ where: { store_id: storeId, user_id: user.id } });
+
+        if (!store && !storeMember) return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
 
         let mapping = await prisma.menuMapping.findFirst({
             where: { store_id: storeId, provider, original_name }

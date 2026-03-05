@@ -1,0 +1,139 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { getUserFromSession } from "@/lib/auth";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+export async function POST(request: Request) {
+    const user = await getUserFromSession();
+    if (!user) {
+        return NextResponse.json({ detail: "Could not validate credentials" }, { status: 401 });
+    }
+
+    try {
+        const body = await request.json();
+        const { store_id } = body;
+
+        if (!store_id) {
+            return NextResponse.json({ detail: "store_id is required" }, { status: 400 });
+        }
+
+        const storeId = parseInt(store_id, 10);
+
+        // Authorization check
+        const store = await prisma.store.findFirst({
+            where: { id: storeId, user_id: user.id }
+        });
+
+        const storeMember = await prisma.storeMember.findFirst({
+            where: { store_id: storeId, user_id: user.id }
+        });
+
+        if (!store && !storeMember) {
+            return NextResponse.json({ detail: "Forbidden access to this store" }, { status: 403 });
+        }
+
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return NextResponse.json({ detail: "GEMINI_API_KEY 환경변수가 설정되지 않아 AI 기능을 사용할 수 없습니다." }, { status: 500 });
+        }
+
+        // 1. Find up to 50 unmapped unique items
+        const unmappedData = await prisma.$queryRaw<Array<{ product_name: string; provider: string }>>`
+            SELECT m.product_name, s.provider
+            FROM menu_db m
+            JOIN sales_db s ON m.oid = s.oid
+            WHERE s.store_id = ${storeId}
+            AND m.product_name NOT IN (
+                SELECT original_name FROM menu_mapping_db WHERE store_id = ${storeId}
+            )
+            AND m.product_name IS NOT NULL
+            AND m.product_name != ''
+            GROUP BY m.product_name, s.provider
+            LIMIT 50;
+        `;
+
+        if (!unmappedData || unmappedData.length === 0) {
+            return NextResponse.json({
+                status: "success",
+                message: "새롭게 매핑할 미분류 메뉴가 없습니다.",
+                count: 0
+            });
+        }
+
+        // 2. Call Gemini
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const promptStr = `
+You are an expert F&B menu cataloger. 
+I will provide a JSON array of raw POS menu names from various providers. 
+Your task is to normalize them into clean, standard menu names.
+For example: '아아' -> '아메리카노', '클래식치즈버거(세트)' -> '클래식치즈버거', '펩시제로콜라' -> '콜라'.
+If it is a meaningless option modifier (e.g., '얼음많이', '샷추가'), return empty string for normalized_name.
+If you are unsure, provide your best guess.
+
+Input:
+${JSON.stringify(unmappedData)}
+
+Output FORMAT requirement:
+Return ONLY a valid JSON array of objects, with NO Markdown wrappers, NO code blocks, like this:
+[
+  { "provider": "payhere", "original_name": "아아", "normalized_name": "아메리카노" }
+]
+`;
+
+        const aiResult = await model.generateContent(promptStr);
+        let textResponse = aiResult.response.text();
+
+        // Clean markdown backticks if any
+        textResponse = textResponse.replace(/^```json/g, '').replace(/^```/g, '').replace(/```$/g, '').trim();
+
+        let parsedAiArray = [];
+        try {
+            parsedAiArray = JSON.parse(textResponse);
+        } catch (e) {
+            console.error("Failed to parse Gemini response:", textResponse);
+            return NextResponse.json({ detail: "AI 응답을 해석하는데 실패했습니다." }, { status: 500 });
+        }
+
+        // 3. Save to database
+        let savedCount = 0;
+        for (const item of parsedAiArray) {
+            if (item.normalized_name && item.normalized_name.trim() !== '') {
+                // Upsert to ensure no duplicate errors if multiple providers had same name concurrently
+                const existing = await prisma.menuMapping.findFirst({
+                    where: {
+                        store_id: storeId,
+                        provider: item.provider,
+                        original_name: item.original_name
+                    }
+                });
+
+                if (!existing) {
+                    await prisma.menuMapping.create({
+                        data: {
+                            store_id: storeId,
+                            provider: item.provider,
+                            original_name: item.original_name,
+                            normalized_name: item.normalized_name
+                        }
+                    });
+                    savedCount++;
+                }
+            }
+        }
+
+        return NextResponse.json({
+            status: "success",
+            message: `AI 스캔 완료! ${savedCount}건의 메뉴가 자동으로 매핑되었습니다.`,
+            count: savedCount
+        });
+
+    } catch (error: any) {
+        console.error("AI Mapping API Error:", error);
+        return NextResponse.json(
+            { detail: "AI 메뉴 맵핑 처리 중 오류가 발생했습니다." },
+            { status: 500 }
+        );
+    }
+}

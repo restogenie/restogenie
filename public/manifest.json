@@ -1,0 +1,21 @@
+{
+    "name": "RestoGenie",
+    "short_name": "RestoGenie",
+    "description": "다중 점포 식음료 매장 AI 매출 분석 대시보드",
+    "start_url": "/dashboard",
+    "display": "standalone",
+    "background_color": "#F9FAFB",
+    "theme_color": "#3182F6",
+    "icons": [
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

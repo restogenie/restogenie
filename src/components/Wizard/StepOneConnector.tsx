@@ -86,25 +86,28 @@ export function StepOneConnector({ onNext }: StepOneProps) {
             });
 
             setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: `Successfully saved ${vendor} credentials for Store ID: ${currentStore.id}.`, level: "INFO" }]);
-            setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Initiating data synchronization pipeline (Execution Logging)...", level: "INFO" }]);
+            if (["baemin", "coupangeats", "yogiyo"].includes(vendor)) {
+                // Background Sync Path: Exit early and let dashboard monitor 'sync_status'
+                setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Background crawling task deployed safely. Tracking sync status asynchronously.", level: "INFO" }]);
+                setIsSuccess(true);
+                toast.success(`${vendor} 연동이 백그라운드에서 시작되었습니다. 대시보드에서 상태를 확인하세요.`);
+                setTimeout(() => onNext(), 2500);
+            } else {
+                // Real-time API Sync Path
+                setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Initiating data synchronization pipeline (Execution Logging)...", level: "INFO" }]);
+                pollingIntervalRef.current = setInterval(fetchLogs, 1500);
 
-            // 2. Start Polling Logs
-            pollingIntervalRef.current = setInterval(fetchLogs, 1500);
+                await axios.post(`/api/v1/sync/${vendor}`, { store_id: currentStore.id });
 
-            // 3. Trigger Sync
-            await axios.post(`/api/v1/sync/${vendor}`, { store_id: currentStore.id });
+                if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+                await fetchLogs();
 
-            // 4. End Stream
-            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-            await fetchLogs(); // Final fetch tick
+                setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Pipeline execution completed successfully. Ready to proceed.", level: "INFO" }]);
+                setIsSuccess(true);
+                toast.success("초기 동기화가 완료되었습니다.");
 
-            setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Pipeline execution completed successfully. Ready to proceed.", level: "INFO" }]);
-            setIsSuccess(true);
-            toast.success("초기 동기화가 완료되었습니다.");
-
-            setTimeout(() => {
-                onNext();
-            }, 2000);
+                setTimeout(() => onNext(), 2000);
+            }
 
         } catch (error: any) {
             if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
@@ -132,7 +135,12 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                             <SelectItem value="payhere">페이히어 (Payhere)</SelectItem>
                             <SelectItem value="smartro">스마트로 (Smartro)</SelectItem>
                             <SelectItem value="easypos">이지포스 (Easypos / KICC)</SelectItem>
-                            <SelectItem value="toss" disabled>토스포스 (지원 예정)</SelectItem>
+                            <SelectItem value="catchtable" disabled>캐치테이블 (선택 불가)</SelectItem>
+
+                            {/* Delivery Apps */}
+                            <SelectItem value="baemin" className="text-blue-600 font-bold border-t border-gray-100 mt-2">배달의민족 (사장님광장)</SelectItem>
+                            <SelectItem value="coupangeats" className="text-blue-600 font-bold">쿠팡이츠 (사장님포털)</SelectItem>
+                            <SelectItem value="yogiyo" className="text-blue-600 font-bold">요기요 (사장님사이트)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -172,6 +180,36 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                         <div className="space-y-2">
                             <Label htmlFor="sp_code">매장코드 (SP_CODE)</Label>
                             <Input id="sp_code" placeholder="예: 000003" value={authCode2} onChange={e => setAuthCode2(e.target.value)} disabled={isLoading || isSuccess} />
+                        </div>
+                    </div>
+                )}
+
+                {vendor === "catchtable" && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="catchtable_auth_key">인증키 (Auth Key)</Label>
+                            <Input id="catchtable_auth_key" placeholder="캐치테이블 API 발급 토큰" value={authCode1} onChange={e => setAuthCode1(e.target.value)} disabled={isLoading || isSuccess} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="catchtable_store_code">매장코드 (Store Code)</Label>
+                            <Input id="catchtable_store_code" placeholder="예: STORE_CT_123" value={authCode2} onChange={e => setAuthCode2(e.target.value)} disabled={isLoading || isSuccess} />
+                        </div>
+                    </div>
+                )}
+
+                {/* Delivery App Inputs */}
+                {["baemin", "coupangeats", "yogiyo"].includes(vendor) && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
+                        <div className="bg-blue-50 text-blue-800 p-3 rounded-md text-sm mb-4">
+                            ✅ 배달앱 연동은 백그라운드 크롤러를 통해 1~2분 정도 소요될 수 있습니다. 연동 시작 후 다른 작업을 진행하셔도 좋습니다.
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor={`${vendor}_id`}>사장님 사이트 아이디</Label>
+                            <Input id={`${vendor}_id`} type="text" placeholder="로그인 아이디를 입력하세요" value={authCode1} onChange={e => setAuthCode1(e.target.value)} disabled={isLoading || isSuccess} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor={`${vendor}_pw`}>비밀번호</Label>
+                            <Input id={`${vendor}_pw`} type="password" placeholder="비밀번호를 입력하세요" value={authCode2} onChange={e => setAuthCode2(e.target.value)} disabled={isLoading || isSuccess} required />
                         </div>
                     </div>
                 )}

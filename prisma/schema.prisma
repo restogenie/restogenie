@@ -19,8 +19,29 @@ model User {
   created_at       DateTime @default(now())
 
   stores           Store[]
+  store_members    StoreMember[]
 
   @@map("users")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+model StoreMember {
+  id         Int      @id @default(autoincrement())
+  store_id   Int
+  user_id    Int
+  role       Role     @default(STAFF)
+  created_at DateTime @default(now())
+  
+  store      Store    @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([store_id, user_id])
+  @@map("store_members")
 }
 
 model Store {
@@ -34,11 +55,17 @@ model Store {
   phone              String?  // 사업장 전화번호
   created_at         DateTime @default(now())
 
+  // --- Monetization ---
+  subscription_status    String   @default("TRIAL") // TRIAL, ACTIVE, CANCELED, PAST_DUE
+  subscription_end_date  DateTime? // 구독 만료일 (향후 결제 연동 시 갱신)
+  billing_key            String?   // 자동 결제를 위한 빌링키
+  
   user               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   pos_connections    PosConnection[]
   sales              Sale[]
   menu_mappings      MenuMapping[]
   system_logs        SystemLog[]
+  members            StoreMember[]
 
   @@index([user_id])
   @@map("stores")
@@ -47,11 +74,12 @@ model Store {
 model PosConnection {
   id          Int      @id @default(autoincrement())
   store_id    Int
-  vendor      String   // payhere, easypos, smartro
-  auth_code_1 String?  // API Key, HD_CODE, Auth Key, etc.
-  auth_code_2 String?  // SP_CODE, COMP_NO, etc.
-  auth_code_3 String?  // STORE_CODE, etc.
+  vendor      String   // payhere, easypos, smartro, baemin, coupangeats
+  auth_code_1 String?  // ID or API Key
+  auth_code_2 String?  // PW or COMP_NO
+  auth_code_3 String?  // STORE_CODE
   is_active   Boolean  @default(true)
+  sync_status String   @default("PENDING") // PENDING, SYNCING, FINISHED, ERROR
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 

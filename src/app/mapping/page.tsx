@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { RefreshCw, Save, Store, Edit2 } from 'lucide-react';
+import { RefreshCw, Save, Store, Edit2, Sparkles } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -27,6 +27,7 @@ export default function MappingPage() {
     const [mappings, setMappings] = useState<Mapping[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [suggestingAI, setSuggestingAI] = useState(false);
 
     // Form State
     const [provider, setProvider] = useState('payhere');
@@ -95,6 +96,35 @@ export default function MappingPage() {
         }
     };
 
+    const handleAISuggest = async () => {
+        if (!currentStore) return;
+        setSuggestingAI(true);
+        const loadingToast = toast.loading("✨ AI가 미분류 메뉴를 스캔하고 최적의 이름으로 자동 매핑 중입니다...", { duration: 15000 });
+
+        try {
+            const token = document.cookie.split("; ").find((row) => row.startsWith("admin_token="))?.split("=")[1];
+            const res = await axios.post(`/api/v1/mapping/ai-suggest`, {
+                store_id: currentStore.id
+            }, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+
+            if (res.data?.status === 'success') {
+                if (res.data.count > 0) {
+                    toast.success(res.data.message, { id: loadingToast, duration: 4000 });
+                    fetchMappings(true);
+                } else {
+                    toast.success(res.data.message || "매핑할 신규 항목이 없습니다.", { id: loadingToast, icon: "✨" });
+                }
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || "AI 자동 매핑에 실패했습니다. (Gemini API 키를 확인해주세요)", { id: loadingToast });
+            console.error(err);
+        } finally {
+            setSuggestingAI(false);
+        }
+    };
+
     const formatDate = (isoStr: string) => {
         if (!isoStr) return '-';
         return DateTime.fromISO(isoStr).toFormat('yyyy.MM.dd');
@@ -108,6 +138,14 @@ export default function MappingPage() {
                     <p className="text-[#8B95A1] font-medium">포스사마다 다른 원본 상품명을 하나의 이름으로 통합 관리하세요.</p>
                 </div>
                 <div className="flex gap-3">
+                    <button
+                        onClick={handleAISuggest}
+                        disabled={suggestingAI}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 text-indigo-600 rounded-xl font-bold hover:from-indigo-100 hover:to-purple-100 transition-all shadow-sm disabled:opacity-50"
+                    >
+                        <Sparkles className={cn("w-4 h-4", suggestingAI && "animate-pulse")} />
+                        ✨ AI 자동 맵핑 추천
+                    </button>
                     <button
                         onClick={() => fetchMappings(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm"

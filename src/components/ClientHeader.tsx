@@ -13,11 +13,13 @@ import {
 import { toast } from "react-hot-toast";
 import { useState } from "react";
 import { AddStoreModal } from "./AddStoreModal";
+import { StoreMembersModal } from "./StoreMembersModal";
 
 export function ClientHeader() {
     const { stores, currentStore, setCurrentStore, isLoading } = useStore();
     const router = useRouter();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
 
     const handleLogout = () => {
         document.cookie = "admin_token=; path=/; max-age=0;";
@@ -35,8 +37,10 @@ export function ClientHeader() {
                 <span className="font-bold text-lg tracking-tight mr-6">RestoGenie</span>
                 <nav className="flex items-center gap-6 border-l border-[#F2F4F6] pl-6 h-6">
                     <a href="/dashboard" className="text-sm font-bold text-[#191F28] hover:text-[#3182F6] transition-colors">매출 대시보드</a>
+                    <a href="/dashboard/analytics" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">심층 분석</a>
                     <a href="/mapping" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">메뉴 맵핑</a>
                     <a href="/logs" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">시스템 로그</a>
+                    <a href="/billing" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">구독/결제 관리</a>
                 </nav>
             </div>
 
@@ -47,6 +51,10 @@ export function ClientHeader() {
                         onValueChange={(val) => {
                             if (val === "ADD_NEW_STORE") {
                                 setIsAddModalOpen(true);
+                                return;
+                            }
+                            if (val === "MANAGE_MEMBERS") {
+                                setIsMembersModalOpen(true);
                                 return;
                             }
                             const selected = stores.find(s => s.id.toString() === val);
@@ -64,6 +72,9 @@ export function ClientHeader() {
                             ))}
                             <SelectItem value="ADD_NEW_STORE" className="text-blue-600 font-bold border-t border-gray-100 mt-1 cursor-pointer">
                                 ➕ 신규 사업장 추가
+                            </SelectItem>
+                            <SelectItem value="MANAGE_MEMBERS" className="text-gray-600 font-bold cursor-pointer">
+                                👥 직원 및 권한 관리
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -83,6 +94,7 @@ export function ClientHeader() {
             </div>
 
             <AddStoreModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+            <StoreMembersModal isOpen={isMembersModalOpen} onClose={() => setIsMembersModalOpen(false)} />
         </header>
     );
 }

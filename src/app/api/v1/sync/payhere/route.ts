@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { PayhereSyncService } from "@/lib/services/payhere";
 import { format } from "date-fns";
 import { prisma } from "@/lib/db";
+import { sendSystemAlert } from "@/lib/alerts";
 
 export async function POST(request: Request) {
+    if (typeof window === "undefined" && false) { return NextResponse.json({}); }
     try {
         const body = await request.json().catch(() => ({}));
         let targetDate = new Date();
@@ -45,6 +47,7 @@ export async function POST(request: Request) {
                 const res = await service.runSync(targetDate);
                 results.push({ store_id: storeId, status: "success", data: res });
             } catch (err: any) {
+                await sendSystemAlert(`Payhere Sync Failed for Store ${storeId}`, err.message);
                 results.push({ store_id: storeId, status: "error", error: err.message });
             }
         }
@@ -56,6 +59,7 @@ export async function POST(request: Request) {
         });
     } catch (error: any) {
         console.error("Payhere Sync API Error:", error);
+        await sendSystemAlert(`Payhere Global Sync API Error`, error.message);
         return NextResponse.json(
             { status: "error", message: error.message || "Failed to sync Payhere." },
             { status: 500 }

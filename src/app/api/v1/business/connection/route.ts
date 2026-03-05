@@ -16,12 +16,16 @@ export async function POST(request: Request) {
             return NextResponse.json({ detail: "Missing store_id or vendor" }, { status: 400 });
         }
 
-        // Validate the store belongs to the user
+        // Validate the store belongs to the user or is a member
         const store = await db.store.findFirst({
             where: { id: store_id, user_id: user.id }
         });
 
-        if (!store) {
+        const storeMember = await db.storeMember.findFirst({
+            where: { store_id: store_id, user_id: user.id }
+        });
+
+        if (!store && !storeMember) {
             return NextResponse.json({ detail: "Store not found or access denied" }, { status: 403 });
         }
 
@@ -41,7 +45,8 @@ export async function POST(request: Request) {
                     auth_code_1: auth_code_1 || existingConnection.auth_code_1,
                     auth_code_2: auth_code_2 || existingConnection.auth_code_2,
                     auth_code_3: auth_code_3 || existingConnection.auth_code_3,
-                    is_active: true
+                    is_active: true,
+                    sync_status: ["baemin", "coupangeats", "yogiyo"].includes(vendor) ? "PENDING" : "FINISHED"
                 }
             });
         } else {
@@ -52,7 +57,8 @@ export async function POST(request: Request) {
                     auth_code_1: auth_code_1 || null,
                     auth_code_2: auth_code_2 || null,
                     auth_code_3: auth_code_3 || null,
-                    is_active: true
+                    is_active: true,
+                    sync_status: ["baemin", "coupangeats", "yogiyo"].includes(vendor) ? "PENDING" : "FINISHED"
                 }
             });
         }

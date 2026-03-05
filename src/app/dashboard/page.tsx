@@ -41,6 +41,7 @@ export default function DashboardPage() {
     const [stats, setStats] = useState({ totalSales: 0, totalOrders: 0, payhereCount: 0, easyposCount: 0, smartroCount: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [pieData, setPieData] = useState<any[]>([]);
+    const [connections, setConnections] = useState<any[]>([]);
 
     // Date Filters
     const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
@@ -96,6 +97,14 @@ export default function DashboardPage() {
                     { name: 'Easypos', value: data.filter((i: SaleInfo) => i.provider === 'easypos').reduce((s: number, i: SaleInfo) => s + i.paid_amount, 0), color: '#F9A825' },
                     { name: 'Smartro', value: data.filter((i: SaleInfo) => i.provider === 'smartro').reduce((s: number, i: SaleInfo) => s + i.paid_amount, 0), color: '#3182F6' },
                 ].filter(p => p.value > 0));
+
+                // Also fetch connection statuses
+                const connRes = await axios.get(`/api/v1/business/connection?store_id=${currentStore.id}`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (connRes.data?.data) {
+                    setConnections(connRes.data.data);
+                }
             }
         } catch (err: any) {
             console.error('Failed to fetch sales', err);
@@ -163,9 +172,9 @@ export default function DashboardPage() {
                     <h1 className="text-3xl font-bold tracking-tight text-[#191F28] mb-2">통합 매출 대시보드</h1>
                     <p className="text-[#8B95A1] font-medium">연동된 결제 채널의 실시간 매출 내역을 확인하세요.</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center bg-white border border-[#E5E8EB] rounded-xl px-3 py-2 shadow-sm font-medium text-sm text-[#4E5968] gap-2">
-                        <CalendarRange className="w-4 h-4 text-[#8B95A1]" />
+                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">
+                    <div className="flex items-center bg-white border border-[#E5E8EB] rounded-xl px-3 py-2 shadow-sm font-medium text-sm text-[#4E5968] gap-2 w-full sm:w-auto">
+                        <CalendarRange className="w-4 h-4 text-[#8B95A1] flex-shrink-0" />
                         <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="outline-none bg-transparent" />
                         <span>~</span>
                         <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="outline-none bg-transparent" />
@@ -180,13 +189,30 @@ export default function DashboardPage() {
                     </button>
                     <button
                         onClick={downloadExcel}
-                        className="flex items-center gap-2 px-4 py-2 bg-[#3182F6] text-white rounded-xl font-semibold hover:bg-[#1B64DA] transition-colors shadow-sm"
+                        className="flex-1 sm:flex-none flex justify-center items-center gap-2 px-4 py-2 bg-[#3182F6] text-white rounded-xl font-semibold hover:bg-[#1B64DA] transition-colors shadow-sm"
                     >
                         <FileDown className="w-4 h-4" />
                         엑셀 다운로드
                     </button>
                 </div>
             </div>
+
+            {/* Sync Status Banners */}
+            {connections.filter(c => c.sync_status === 'SYNCING').length > 0 && (
+                <div className="flex flex-col gap-2">
+                    {connections.filter(c => c.sync_status === 'SYNCING').map((conn, idx) => (
+                        <div key={idx} className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-sm animate-pulse">
+                            <div className="flex items-center gap-3">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                                <span className="font-semibold text-sm">
+                                    {conn.vendor === 'baemin' ? '배달의민족' : conn.vendor === 'coupangeats' ? '쿠팡이츠' : '요기요'} 연동 중입니다...
+                                </span>
+                            </div>
+                            <span className="text-xs font-medium bg-blue-100 px-2 py-1 rounded text-blue-700">백그라운드 처리중</span>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -291,8 +317,8 @@ export default function DashboardPage() {
                         <p className="text-sm">마법사(Wizard) 탭에서 데이터 동기화를 먼저 진행해주세요.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse whitespace-nowrap">
+                    <div className="overflow-x-auto w-full">
+                        <table className="w-full min-w-[800px] text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr className="bg-[#F9FAFB] border-b border-[#F2F4F6]">
                                     <th className="px-6 py-4 text-sm font-semibold text-[#4E5968]">시간</th>
@@ -316,9 +342,29 @@ export default function DashboardPage() {
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#E8F8EE] text-[#00C471]">
                                                     Payhere
                                                 </span>
-                                            ) : (
+                                            ) : item.provider === 'easypos' ? (
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#FEF4E5] text-[#F9A825]">
                                                     Easypos
+                                                </span>
+                                            ) : item.provider === 'smartro' ? (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
+                                                    Smartro
+                                                </span>
+                                            ) : item.provider === 'baemin' ? (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#2AC1BC]/10 text-[#2AC1BC]">
+                                                    배민
+                                                </span>
+                                            ) : item.provider === 'coupangeats' ? (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600">
+                                                    쿠팡이츠
+                                                </span>
+                                            ) : item.provider === 'yogiyo' ? (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#FA0050]/10 text-[#FA0050]">
+                                                    요기요
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                                    {item.provider}
                                                 </span>
                                             )}
                                         </td>
