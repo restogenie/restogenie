@@ -33,9 +33,15 @@ export async function GET(request: Request) {
         const startDateParam = searchParams.get("start_date");
         const endDateParam = searchParams.get("end_date");
         const limitParam = searchParams.get("limit") || "100";
+        const providerParam = searchParams.get("provider");
         const limit = parseInt(limitParam, 10);
 
         let dateFilter: any = { store_id: storeId };
+
+        if (providerParam) {
+            dateFilter.provider = providerParam;
+        }
+
         if (startDateParam && endDateParam) {
             dateFilter.business_date = {
                 gte: new Date(startDateParam),

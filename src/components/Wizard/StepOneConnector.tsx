@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 
 interface StepOneProps {
-    onNext: () => void;
+    onNext: (vendor?: string) => void;
 }
 
 export function StepOneConnector({ onNext }: StepOneProps) {
@@ -91,7 +91,7 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                 setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Background crawling task deployed safely. Tracking sync status asynchronously.", level: "INFO" }]);
                 setIsSuccess(true);
                 toast.success(`${vendor} 연동이 백그라운드에서 시작되었습니다. 대시보드에서 상태를 확인하세요.`);
-                setTimeout(() => onNext(), 2500);
+                setTimeout(() => onNext(vendor), 2500);
             } else {
                 // Real-time API Sync Path
                 setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Initiating data synchronization pipeline (Execution Logging)...", level: "INFO" }]);
@@ -106,7 +106,7 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                 setIsSuccess(true);
                 toast.success("초기 동기화가 완료되었습니다.");
 
-                setTimeout(() => onNext(), 2000);
+                setTimeout(() => onNext(vendor), 2000);
             }
 
         } catch (error: any) {

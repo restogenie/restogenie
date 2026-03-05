@@ -7,8 +7,12 @@ import { StepThreeSchedule } from "@/components/Wizard/StepThreeSchedule";
 
 export default function Home() {
   const [step, setStep] = useState(1);
+  const [selectedVendor, setSelectedVendor] = useState<string>("");
 
-  const handleNext = () => setStep(prev => prev + 1);
+  const handleNext = (vendor?: string) => {
+    if (vendor) setSelectedVendor(vendor);
+    setStep(prev => prev + 1);
+  };
   const handlePrev = () => setStep(prev => prev - 1);
   const handleComplete = () => {
     // Pipeline activated, reset or redirect logic could go here
@@ -60,7 +64,7 @@ export default function Home() {
         {/* Render Steps */}
         <div className="mt-8 transition-all duration-300">
           {step === 1 && <StepOneConnector onNext={handleNext} />}
-          {step === 2 && <StepTwoMapping onNext={handleNext} onPrev={handlePrev} />}
+          {step === 2 && <StepTwoMapping onNext={handleNext} onPrev={handlePrev} vendor={selectedVendor} />}
           {step === 3 && <StepThreeSchedule onComplete={handleComplete} onPrev={handlePrev} />}
         </div>
       </main>

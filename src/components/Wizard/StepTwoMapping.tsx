@@ -15,9 +15,10 @@ import toast from "react-hot-toast";
 interface StepTwoProps {
     onNext: () => void;
     onPrev: () => void;
+    vendor: string;
 }
 
-export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
+export function StepTwoMapping({ onNext, onPrev, vendor }: StepTwoProps) {
     const { currentStore } = useStore();
     const [salesDetails, setSalesDetails] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -65,7 +66,7 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
         const initSales: Record<string, string> = {};
         targetSalesSchemaOptions.forEach(opt => initSales[opt.field] = opt.field);
         setSalesMappings(initSales);
-        
+
         const initMenus: Record<string, string> = {};
         targetMenuSchemaOptions.forEach(opt => initMenus[opt.field] = opt.field);
         setMenuMappings(initMenus);
@@ -77,8 +78,9 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
         const fetchData = async () => {
             setLoading(true);
             try {
-                // Fetch the 5 most recently synchronized orders
-                const response = await fetch(`/api/v1/sales?store_id=${currentStore.id}&limit=5`);
+                // Fetch the 5 most recently synchronized orders for this specific vendor
+                const url = `/api/v1/sales?store_id=${currentStore.id}&limit=5${vendor ? `&provider=${vendor}` : ''}`;
+                const response = await fetch(url);
                 const result = await response.json();
                 if (result.status === "success" && result.data) {
                     setSalesDetails(result.data);
@@ -109,8 +111,8 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
     const handleSalesMappingChange = (schemaRowKey: string, newlySelectedTargetKey: string) => {
         // Prevent selection of a target key that is already mapped elsewhere
         if (Object.values(salesMappings).includes(newlySelectedTargetKey)) {
-             toast.error("이 컬럼은 이미 다른 속성에 매핑되어 있습니다. 먼저 다른 항목의 매핑을 해제해주세요.");
-             return;
+            toast.error("이 컬럼은 이미 다른 속성에 매핑되어 있습니다. 먼저 다른 항목의 매핑을 해제해주세요.");
+            return;
         }
 
         setSalesMappings(prev => ({
@@ -120,9 +122,9 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
     };
 
     const handleMenuMappingChange = (schemaRowKey: string, newlySelectedTargetKey: string) => {
-         if (Object.values(menuMappings).includes(newlySelectedTargetKey)) {
-             toast.error("이 컬럼은 이미 다른 속성에 매핑되어 있습니다. 먼저 다른 항목의 매핑을 해제해주세요.");
-             return;
+        if (Object.values(menuMappings).includes(newlySelectedTargetKey)) {
+            toast.error("이 컬럼은 이미 다른 속성에 매핑되어 있습니다. 먼저 다른 항목의 매핑을 해제해주세요.");
+            return;
         }
 
         setMenuMappings(prev => ({
