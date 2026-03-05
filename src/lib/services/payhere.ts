@@ -174,7 +174,7 @@ export class PayhereSyncService {
                 discount_amount: pmt.discount_amount || 0,
                 refunded_amount: pmt.refunded_amount || 0,
                 customer_uid: customerData.uid || null,
-                customer_mobile: customerData.mobile_phone_number || null,
+                customer_mobile_phone_number: customerData.mobile_phone_number || null,
                 delivery_app: deliveryApp || null,
                 delivery_order_no: deliveryOrderNo || null,
             });
@@ -188,6 +188,7 @@ export class PayhereSyncService {
 
                 const options = item.options || [];
                 if (options.length > 0) {
+                    let optSeq = 1;
                     for (const opt of options) {
                         menuToSave.push({
                             store_id: this.storeId,
@@ -199,8 +200,9 @@ export class PayhereSyncService {
                             product_price: item.product_price || 0,
                             quantity: item.quantity || 0,
                             total_price: item.total_price || 0,
-                            option_external_key: opt.option_external_key || null,
                             option_name: opt.option_name || null,
+                            option_seq: optSeq++,
+                            option_id: opt.option_external_key || null,
                             option_price: opt.option_price || 0
                         });
                     }
@@ -215,8 +217,9 @@ export class PayhereSyncService {
                         product_price: item.product_price || 0,
                         quantity: item.quantity || 0,
                         total_price: item.total_price || 0,
-                        option_external_key: null,
                         option_name: null,
+                        option_seq: null,
+                        option_id: null,
                         option_price: null
                     });
                 }

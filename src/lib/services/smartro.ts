@@ -136,17 +136,19 @@ export class SmartroSyncService {
                 discount_amount: Math.abs(parseFloat(head.DC_AMT || "0")),
                 refunded_amount: isRefund ? Math.abs(grandTotal) : 0,
                 customer_uid: String(head.PNTASP_CUSTID || ""),
-                customer_mobile: null,
+                customer_mobile_phone_number: null,
                 delivery_app: "NONE",
                 delivery_order_no: null
             });
 
             let mainSeq = 0;
+            let currentOptSeq = 1;
             for (let idx = 0; idx < orderDetails.length; idx++) {
                 const detail = orderDetails[idx];
                 const isOption = String(detail.YN_SET_OPTION || "") === "Y";
                 if (!isOption) {
                     mainSeq += 1;
+                    currentOptSeq = 1;
                 }
 
                 let cDt = createdAtDt;
@@ -169,8 +171,9 @@ export class SmartroSyncService {
                         product_price: Math.abs(parseFloat(detail.POSPRICE || detail.QTYPRICE || "0")),
                         quantity: parseInt(detail.QTY || "1", 10),
                         total_price: Math.abs(parseFloat(detail.SUMPRICE || "0")),
-                        option_external_key: null,
                         option_name: null,
+                        option_seq: null,
+                        option_id: null,
                         option_price: null
                     });
                 } else {
@@ -197,8 +200,9 @@ export class SmartroSyncService {
                         product_price: pPrice,
                         quantity: parseInt(detail.QTY || "1", 10),
                         total_price: pTotal,
-                        option_external_key: detail.ID_CODE || "",
                         option_name: detail.ID_DESC || "",
+                        option_seq: currentOptSeq++,
+                        option_id: detail.ID_CODE || "",
                         option_price: Math.abs(parseFloat(detail.POSPRICE || detail.QTYPRICE || "0"))
                     });
                 }

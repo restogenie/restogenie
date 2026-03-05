@@ -78,7 +78,7 @@ model Sale {
   discount_amount       Float    @default(0.0) // 할인
   refunded_amount       Float    @default(0.0) // 환불
   customer_uid          String?  // 고객 id
-  customer_mobile       String?  // 고객 전화번호
+  customer_mobile_phone_number String? // 고객 전화번호
   delivery_app          String?  // 배달 앱
   delivery_order_no     String?  // 배달 주문번호
 
@@ -94,17 +94,19 @@ model Sale {
 
 model MenuLineItem {
   id                  Int      @id @default(autoincrement())
+  unique_oid          String   @unique @default(uuid()) // 고유주문ID
   store_id            Int
   provider            String
-  oid                 String
+  oid                 String   // 주문 OID (매칭용)
   main_item_seq       Int?     // 메인 메뉴 순번
   created_at          DateTime? // 주문 생성일시 (KST)
   product_name        String?  // 상품명
   product_price       Float    @default(0.0) // 상품 단가
   quantity            Int      @default(0) // 상품 수량
   total_price         Float    @default(0.0) // 상품 합계 금액
-  option_external_key String?  // 옵션 Key
   option_name         String?  // 옵션명
+  option_seq          Int?     // 옵션 순번
+  option_id           String?  // 옵션 ID
   option_price        Float?   // 옵션 가격
 
   sale Sale @relation(fields: [store_id, provider, oid], references: [store_id, provider, oid], onDelete: Cascade)

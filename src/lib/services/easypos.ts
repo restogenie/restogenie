@@ -162,8 +162,9 @@ export class EasyposSyncService {
                     product_price: parseFloat(mainItem.item_price || "0"),
                     quantity: parseInt(mainItem.qty || "0", 10),
                     total_price: parseFloat(mainItem.total_amt || "0"),
-                    option_external_key: null,
                     option_name: null,
+                    option_seq: null,
+                    option_id: null,
                     option_price: null
                 });
 
@@ -172,6 +173,7 @@ export class EasyposSyncService {
                 const parentKey = `${key}_${currentDetailNo}`;
                 const childOptions = optionsByParent[parentKey] || [];
 
+                let optSeq = 1;
                 for (const option of childOptions) {
                     const optName = (option.item_name || "").trim();
                     if (optName === "선택안함") continue;
@@ -186,8 +188,9 @@ export class EasyposSyncService {
                         product_price: 0,
                         quantity: parseInt(option.qty || "0", 10),
                         total_price: parseFloat(option.total_amt || "0"),
-                        option_external_key: option.item_code || null,
                         option_name: optName,
+                        option_seq: optSeq++,
+                        option_id: option.item_code || null,
                         option_price: parseFloat(option.item_price || "0")
                     });
                 }
@@ -252,7 +255,7 @@ export class EasyposSyncService {
                 discount_amount: parseFloat(header.total_dc_amt || "0"),
                 refunded_amount: 0,
                 customer_uid: header.cust_card_no || null,
-                customer_mobile: bestPhone,
+                customer_mobile_phone_number: bestPhone,
                 delivery_app: null,
                 delivery_order_no: null
             });

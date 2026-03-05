@@ -1,157 +1,209 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { useStoreContext } from "@/lib/StoreContext";
+import { Loader2, Database, TableProperties } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
 
 interface StepTwoProps {
     onNext: () => void;
     onPrev: () => void;
 }
 
-const mockDataPaths = [
-    {
-        path: "payment.txId",
-        samples: ["TOSS_12345", "TOSS_67890", "TOSS_11223"],
-        recommendedTarget: "transaction_id",
-        warning: false,
-    },
-    {
-        path: "payment.date",
-        samples: ["2026-02-25T14:30:00Z", "2026-02-25T14:35:00Z"],
-        recommendedTarget: "transaction_timestamp",
-        warning: false,
-    },
-    {
-        path: "payment.card.amount",
-        samples: ["5000", 12500, "20000"], // Mixed types simulate warning
-        recommendedTarget: "net_sales_amount",
-        warning: true,
-    },
-    {
-        path: "order.channel",
-        samples: ["배달의민족", "현장결제", "요기요"],
-        recommendedTarget: "sales_channel",
-        warning: false,
-    },
-];
-
-const targetSchemas = [
-    { value: "transaction_id", label: "transaction_id (영수증 고유 식별자)" },
-    { value: "transaction_timestamp", label: "transaction_timestamp (결제 일시)" },
-    { value: "location_code", label: "location_code (매장 코드)" },
-    { value: "gross_sales_amount", label: "gross_sales_amount (총 매출 금액)" },
-    { value: "net_sales_amount", label: "net_sales_amount (실제 결제 금액)" },
-    { value: "discount_amount", label: "discount_amount (할인 금액)" },
-    { value: "tax_amount", label: "tax_amount (부가세)" },
-    { value: "tender_type", label: "tender_type (결제 수단)" },
-    { value: "transaction_status", label: "transaction_status (결제 상태)" },
-    { value: "delivery_fee_amount", label: "delivery_fee_amount (배달 팁)" },
-    { value: "sales_channel", label: "sales_channel (주문 채널)" },
-    { value: "ignore", label: "-- 무시 (Ignore) --" },
-];
-
 export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
-    const [sampleIndex, setSampleIndex] = useState(0);
+    const { currentStore } = useStoreContext();
+    const [salesDetails, setSalesDetails] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const nextSample = () => setSampleIndex(prev => prev + 1);
-    const prevSample = () => setSampleIndex(prev => Math.max(0, prev - 1));
+    useEffect(() => {
+        if (!currentStore?.id) return;
+
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                // Fetch the 5 most recently synchronized orders
+                const response = await fetch(`/api/v1/sales?store_id=${currentStore.id}&limit=5`);
+                const result = await response.json();
+                if (result.status === "success" && result.data) {
+                    setSalesDetails(result.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch recent sales", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [currentStore?.id]);
+
+    const targetSalesSchema = [
+        { field: "business_date", label: "영업일 (날짜)" },
+        { field: "oid", label: "주문번호(oid)" },
+        { field: "created_at", label: "주문 생성 일시" },
+        { field: "order_name", label: "주문명" },
+        { field: "order_from", label: "주문 경로" },
+        { field: "order_status", label: "주문 상태" },
+        { field: "ordered_amount", label: "결제 금액" },
+        { field: "paid_amount", label: "실 결제 금액" },
+        { field: "point_used_amount", label: "포인트 사용" },
+        { field: "customer_point_earned", label: "포인트 적립" },
+        { field: "prepaid_used_amount", label: "선불권 사용" },
+        { field: "discount_amount", label: "할인" },
+        { field: "refunded_amount", label: "환불" },
+        { field: "customer_uid", label: "고객 id" },
+        { field: "customer_mobile_phone_number", label: "고객 전화번호" },
+        { field: "delivery_app", label: "배달 앱" },
+        { field: "delivery_order_no", label: "배달 주문번호" },
+    ];
+
+    const targetMenuSchema = [
+        { field: "unique_oid", label: "고유주문ID" },
+        { field: "oid", label: "주문 OID (매칭용)" },
+        { field: "main_item_seq", label: "메인 메뉴 순번" },
+        { field: "created_at", label: "주문 생성일시" },
+        { field: "product_name", label: "상품명" },
+        { field: "product_price", label: "상품 단가" },
+        { field: "quantity", label: "상품 수량" },
+        { field: "total_price", label: "상품 합계 금액" },
+        { field: "option_name", label: "옵션명" },
+        { field: "option_seq", label: "옵션 순번" },
+        { field: "option_id", label: "옵션 ID" },
+        { field: "option_price", label: "옵션 가격" },
+    ];
+
+    const getDisplayValue = (val: any) => {
+        if (val === null || val === undefined) return <span className="text-muted-foreground italic">null</span>;
+        if (typeof val === "boolean") return val ? "true" : "false";
+        if (typeof val === "string" && val.includes("T") && val.includes("Z")) {
+            try {
+                return format(new Date(val), "yyyy-MM-dd HH:mm:ss");
+            } catch {
+                return val;
+            }
+        }
+        return String(val);
+    };
+
+    const displaySales = salesDetails.slice(0, 3);
+    const displayMenus = salesDetails.flatMap(s => s.menu_items || []).slice(0, 3);
 
     return (
         <Card className="w-full max-w-5xl mx-auto border-border shadow-sm">
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-2xl text-foreground font-bold">2단계: 데이터 매칭 (Schema Discovery)</CardTitle>
+                        <CardTitle className="text-2xl text-foreground font-bold flex items-center gap-2">
+                            <Database className="h-6 w-6 text-primary" />
+                            2단계: 실시간 데이터 스키마 매핑 증명
+                        </CardTitle>
                         <CardDescription className="text-muted-foreground mt-1">
-                            최근 50건의 트랜잭션을 분석하여 컬럼을 추출했습니다. 자동 추천된 매핑을 확인하고 수정하세요.
+                            이전 단계에서 동기화된 <strong>실제 결제 데이터</strong>가 RestoGenie 표준 스키마 테이블에 어떻게 적재되었는지 실시간으로 확인합니다.
                         </CardDescription>
                     </div>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">분석 완료 (Sample: {sampleIndex + 1})</Badge>
+                    {loading ? (
+                        <Badge variant="outline" className="bg-muted text-muted-foreground">데이터 로딩 중...</Badge>
+                    ) : (
+                        <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20 px-3 py-1">
+                            실 데이터 {salesDetails.length}건 감지됨
+                        </Badge>
+                    )}
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="flex justify-end mb-4 gap-2">
-                    <Button variant="outline" size="sm" onClick={prevSample} disabled={sampleIndex === 0}>
-                        <ChevronLeft className="h-4 w-4 mr-1" /> 이전 샘플
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={nextSample} disabled={sampleIndex >= 2}>
-                        다음 샘플 <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                </div>
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+                        <p className="text-sm text-muted-foreground">데이터베이스에서 방금 연동된 주문 데이터를 실시간으로 가져오는 중입니다...</p>
+                    </div>
+                ) : salesDetails.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 border rounded-lg bg-muted/20">
+                        <TableProperties className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                        <p className="font-semibold text-lg text-foreground mb-1">최근 동기화된 데이터가 없습니다.</p>
+                        <p className="text-sm text-muted-foreground">이전 단계에서 POS 연결을 테스트하거나 오늘 날짜에 매출이 있는지 확인하세요.</p>
+                    </div>
+                ) : (
+                    <Tabs defaultValue="sales" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-6">
+                            <TabsTrigger value="sales" className="font-semibold">주문 (결제) 데이터베이스</TabsTrigger>
+                            <TabsTrigger value="menus" className="font-semibold">주문 상세 데이터베이스</TabsTrigger>
+                        </TabsList>
 
-                <div className="rounded-md border border-border overflow-hidden">
-                    <Table>
-                        <TableHeader className="bg-secondary/50">
-                            <TableRow>
-                                <TableHead className="font-semibold text-foreground w-[30%]">POS 원천 데이터 경로</TableHead>
-                                <TableHead className="font-semibold text-foreground w-[35%]">실제 데이터 샘플 (미리보기)</TableHead>
-                                <TableHead className="font-semibold text-foreground w-[35%]">레스토지니 표준 항목 (타겟)</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {mockDataPaths.map((row, idx) => (
-                                <TableRow key={idx} className="transition-colors hover:bg-muted/50">
-                                    <TableCell className="font-medium">
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger className="flex items-center gap-1.5 cursor-help text-primary hover:underline">
-                                                    <code className="bg-muted px-1.5 py-0.5 rounded text-sm text-foreground">{row.path}</code>
-                                                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                                                </TooltipTrigger>
-                                                <TooltipContent side="right">
-                                                    <p>Original JSON path in payload</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono text-sm bg-background border px-2 py-1 rounded-md min-w-[120px] inline-block">
-                                                {String(row.samples[Math.min(sampleIndex, row.samples.length - 1)])}
-                                            </span>
-                                            {row.warning && (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger>
-                                                            <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <p>샘플 중 문자열과 숫자가 혼재되어 있습니다. 문자열로 강제 캐스팅 됩니다.</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Select defaultValue={row.recommendedTarget}>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="타겟 컬럼 선택" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {targetSchemas.map(schema => (
-                                                    <SelectItem key={schema.value} value={schema.value}>
-                                                        {schema.label}
-                                                    </SelectItem>
+                        <TabsContent value="sales">
+                            <div className="rounded-md border border-border overflow-x-auto">
+                                <Table className="whitespace-nowrap">
+                                    <TableHeader className="bg-secondary/50">
+                                        <TableRow>
+                                            <TableHead className="font-semibold text-foreground w-[20%]">DB 스키마 컬럼</TableHead>
+                                            <TableHead className="font-semibold text-foreground w-[15%]">항목 설명</TableHead>
+                                            {displaySales.map((_, idx) => (
+                                                <TableHead key={idx} className="font-semibold text-primary">Preview 데이터 #{idx + 1}</TableHead>
+                                            ))}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {targetSalesSchema.map((schema, idx) => (
+                                            <TableRow key={idx} className="transition-colors hover:bg-muted/30">
+                                                <TableCell className="font-medium font-mono text-sm">{schema.field}</TableCell>
+                                                <TableCell className="text-muted-foreground text-sm">{schema.label}</TableCell>
+                                                {displaySales.map((sale, saleIdx) => (
+                                                    <TableCell key={saleIdx} className="font-mono text-sm max-w-[200px] truncate" title={String(sale[schema.field] || "")}>
+                                                        {getDisplayValue(sale[schema.field])}
+                                                    </TableCell>
                                                 ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
+                                                {/* Fill empty columns if less than 3 sales */}
+                                                {Array.from({ length: Math.max(0, 3 - displaySales.length) }).map((_, emptyIdx) => (
+                                                    <TableCell key={`empty-${emptyIdx}`}>-</TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="menus">
+                            <div className="rounded-md border border-border overflow-x-auto">
+                                <Table className="whitespace-nowrap">
+                                    <TableHeader className="bg-secondary/50">
+                                        <TableRow>
+                                            <TableHead className="font-semibold text-foreground w-[20%]">DB 스키마 컬럼</TableHead>
+                                            <TableHead className="font-semibold text-foreground w-[15%]">항목 설명</TableHead>
+                                            {displayMenus.map((_, idx) => (
+                                                <TableHead key={idx} className="font-semibold text-primary">Detail 데이터 #{idx + 1}</TableHead>
+                                            ))}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {targetMenuSchema.map((schema, idx) => (
+                                            <TableRow key={idx} className="transition-colors hover:bg-muted/30">
+                                                <TableCell className="font-medium font-mono text-sm">{schema.field}</TableCell>
+                                                <TableCell className="text-muted-foreground text-sm">{schema.label}</TableCell>
+                                                {displayMenus.map((menu, menuIdx) => (
+                                                    <TableCell key={menuIdx} className="font-mono text-sm max-w-[200px] truncate" title={String(menu[schema.field] || "")}>
+                                                        {getDisplayValue(menu[schema.field])}
+                                                    </TableCell>
+                                                ))}
+                                                {Array.from({ length: Math.max(0, 3 - displayMenus.length) }).map((_, emptyIdx) => (
+                                                    <TableCell key={`empty-${emptyIdx}`}>-</TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+                )}
             </CardContent>
             <CardFooter className="flex justify-between pt-4 border-t border-secondary mt-4">
                 <Button variant="outline" onClick={onPrev}>이전 단계</Button>
-                <Button onClick={onNext} className="bg-primary hover:bg-primary/90 text-white">매핑 확정 및 다음</Button>
+                <Button onClick={onNext} className="bg-primary hover:bg-primary/90 text-white" disabled={loading}>검증 완료 및 자동화 스케줄 가동</Button>
             </CardFooter>
         </Card>
     );

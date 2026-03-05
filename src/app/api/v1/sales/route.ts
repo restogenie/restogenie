@@ -46,7 +46,8 @@ export async function GET(request: Request) {
         const sales = await prisma.sale.findMany({
             where: dateFilter,
             orderBy: { created_at: 'desc' },
-            take: limit
+            take: limit,
+            include: { menu_items: true }
         });
 
         return NextResponse.json({
