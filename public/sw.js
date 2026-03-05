@@ -1,28 +1,19 @@
-const CACHE_NAME = 'restogenie-cache-v1';
-const urlsToCache = [
-    '/',
-    '/login',
-    '/dashboard',
-    '/manifest.json'
-];
+self.addEventListener('install', (e) => {
+    self.skipWaiting();
+});
 
-self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                return cache.addAll(urlsToCache);
-            })
+self.addEventListener('activate', (e) => {
+    e.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    return caches.delete(cacheName);
+                })
+            );
+        })
     );
 });
 
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                if (response) {
-                    return response;
-                }
-                return fetch(event.request);
-            })
-    );
+self.addEventListener('fetch', (e) => {
+    // Do not intercept any requests to prevent Next.js App Router ERR_FAILED crashes
 });
