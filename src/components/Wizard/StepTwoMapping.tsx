@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/StoreContext";
 import { Loader2, Database, TableProperties } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import toast from "react-hot-toast";
 
 interface StepTwoProps {
     onNext: () => void;
@@ -19,6 +21,55 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
     const { currentStore } = useStore();
     const [salesDetails, setSalesDetails] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const targetSalesSchemaOptions = [
+        { field: "business_date", label: "영업일 (날짜)" },
+        { field: "oid", label: "주문번호(oid)" },
+        { field: "created_at", label: "주문 생성 일시" },
+        { field: "order_name", label: "주문명" },
+        { field: "order_from", label: "주문 경로" },
+        { field: "order_status", label: "주문 상태" },
+        { field: "ordered_amount", label: "결제 금액" },
+        { field: "paid_amount", label: "실 결제 금액" },
+        { field: "point_used_amount", label: "포인트 사용" },
+        { field: "customer_point_earned", label: "포인트 적립" },
+        { field: "prepaid_used_amount", label: "선불권 사용" },
+        { field: "discount_amount", label: "할인" },
+        { field: "refunded_amount", label: "환불" },
+        { field: "customer_uid", label: "고객 id" },
+        { field: "customer_mobile_phone_number", label: "고객 전화번호" },
+        { field: "delivery_app", label: "배달 앱" },
+        { field: "delivery_order_no", label: "배달 주문번호" },
+    ];
+
+    const targetMenuSchemaOptions = [
+        { field: "unique_oid", label: "고유주문ID" },
+        { field: "oid", label: "주문 OID (매칭용)" },
+        { field: "main_item_seq", label: "메인 메뉴 순번" },
+        { field: "created_at", label: "주문 생성일시" },
+        { field: "product_name", label: "상품명" },
+        { field: "product_price", label: "상품 단가" },
+        { field: "quantity", label: "상품 수량" },
+        { field: "total_price", label: "상품 합계 금액" },
+        { field: "option_name", label: "옵션명" },
+        { field: "option_seq", label: "옵션 순번" },
+        { field: "option_id", label: "옵션 ID" },
+        { field: "option_price", label: "옵션 가격" },
+    ];
+
+    const [salesMappings, setSalesMappings] = useState<Record<string, string>>({});
+    const [menuMappings, setMenuMappings] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        // Init default mapping mappings directly logic Map(Field, Field)
+        const initSales: Record<string, string> = {};
+        targetSalesSchemaOptions.forEach(opt => initSales[opt.field] = opt.field);
+        setSalesMappings(initSales);
+        
+        const initMenus: Record<string, string> = {};
+        targetMenuSchemaOptions.forEach(opt => initMenus[opt.field] = opt.field);
+        setMenuMappings(initMenus);
+    }, []);
 
     useEffect(() => {
         if (!currentStore?.id) return;
@@ -42,41 +93,6 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
         fetchData();
     }, [currentStore?.id]);
 
-    const targetSalesSchema = [
-        { field: "business_date", label: "영업일 (날짜)" },
-        { field: "oid", label: "주문번호(oid)" },
-        { field: "created_at", label: "주문 생성 일시" },
-        { field: "order_name", label: "주문명" },
-        { field: "order_from", label: "주문 경로" },
-        { field: "order_status", label: "주문 상태" },
-        { field: "ordered_amount", label: "결제 금액" },
-        { field: "paid_amount", label: "실 결제 금액" },
-        { field: "point_used_amount", label: "포인트 사용" },
-        { field: "customer_point_earned", label: "포인트 적립" },
-        { field: "prepaid_used_amount", label: "선불권 사용" },
-        { field: "discount_amount", label: "할인" },
-        { field: "refunded_amount", label: "환불" },
-        { field: "customer_uid", label: "고객 id" },
-        { field: "customer_mobile_phone_number", label: "고객 전화번호" },
-        { field: "delivery_app", label: "배달 앱" },
-        { field: "delivery_order_no", label: "배달 주문번호" },
-    ];
-
-    const targetMenuSchema = [
-        { field: "unique_oid", label: "고유주문ID" },
-        { field: "oid", label: "주문 OID (매칭용)" },
-        { field: "main_item_seq", label: "메인 메뉴 순번" },
-        { field: "created_at", label: "주문 생성일시" },
-        { field: "product_name", label: "상품명" },
-        { field: "product_price", label: "상품 단가" },
-        { field: "quantity", label: "상품 수량" },
-        { field: "total_price", label: "상품 합계 금액" },
-        { field: "option_name", label: "옵션명" },
-        { field: "option_seq", label: "옵션 순번" },
-        { field: "option_id", label: "옵션 ID" },
-        { field: "option_price", label: "옵션 가격" },
-    ];
-
     const getDisplayValue = (val: any) => {
         if (val === null || val === undefined) return <span className="text-muted-foreground italic">null</span>;
         if (typeof val === "boolean") return val ? "true" : "false";
@@ -89,6 +105,32 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
         }
         return String(val);
     };
+
+    const handleSalesMappingChange = (schemaRowKey: string, newlySelectedTargetKey: string) => {
+        // Prevent selection of a target key that is already mapped elsewhere
+        if (Object.values(salesMappings).includes(newlySelectedTargetKey)) {
+             toast.error("이 컬럼은 이미 다른 속성에 매핑되어 있습니다. 먼저 다른 항목의 매핑을 해제해주세요.");
+             return;
+        }
+
+        setSalesMappings(prev => ({
+            ...prev,
+            [schemaRowKey]: newlySelectedTargetKey
+        }));
+    };
+
+    const handleMenuMappingChange = (schemaRowKey: string, newlySelectedTargetKey: string) => {
+         if (Object.values(menuMappings).includes(newlySelectedTargetKey)) {
+             toast.error("이 컬럼은 이미 다른 속성에 매핑되어 있습니다. 먼저 다른 항목의 매핑을 해제해주세요.");
+             return;
+        }
+
+        setMenuMappings(prev => ({
+            ...prev,
+            [schemaRowKey]: newlySelectedTargetKey
+        }));
+    };
+
 
     const displaySales = salesDetails.slice(0, 3);
     const displayMenus = salesDetails.flatMap(s => s.menu_items || []).slice(0, 3);
@@ -103,7 +145,7 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
                             2단계: 실시간 데이터 스키마 매핑 증명
                         </CardTitle>
                         <CardDescription className="text-muted-foreground mt-1">
-                            이전 단계에서 동기화된 <strong>실제 결제 데이터</strong>가 RestoGenie 표준 스키마 테이블에 어떻게 적재되었는지 실시간으로 확인합니다.
+                            이전 단계에서 동기화된 <strong>실제 결제 데이터</strong>가 RestoGenie 표준 스키마 테이블에 어떻게 적재되었는지 실시간으로 확인합니다. 우측 데이터셋에 맞춰 항목을 커스텀 변경할 수 있습니다.
                         </CardDescription>
                     </div>
                     {loading ? (
@@ -140,23 +182,38 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
                                     <TableHeader className="bg-secondary/50">
                                         <TableRow>
                                             <TableHead className="font-semibold text-foreground w-[20%]">DB 스키마 컬럼</TableHead>
-                                            <TableHead className="font-semibold text-foreground w-[15%]">항목 설명</TableHead>
+                                            <TableHead className="font-semibold text-foreground w-[20%]">항목 매핑 (수정 가능)</TableHead>
                                             {displaySales.map((_, idx) => (
                                                 <TableHead key={idx} className="font-semibold text-primary">Preview 데이터 #{idx + 1}</TableHead>
                                             ))}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {targetSalesSchema.map((schema, idx) => (
+                                        {targetSalesSchemaOptions.map((schema, idx) => (
                                             <TableRow key={idx} className="transition-colors hover:bg-muted/30">
                                                 <TableCell className="font-medium font-mono text-sm">{schema.field}</TableCell>
-                                                <TableCell className="text-muted-foreground text-sm">{schema.label}</TableCell>
+                                                <TableCell className="text-muted-foreground text-sm">
+                                                    <Select
+                                                        value={salesMappings[schema.field] || schema.field}
+                                                        onValueChange={(val) => handleSalesMappingChange(schema.field, val)}
+                                                    >
+                                                        <SelectTrigger className="w-[180px] h-8 text-xs bg-white">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {targetSalesSchemaOptions.map(opt => (
+                                                                <SelectItem key={opt.field} value={opt.field} disabled={Object.values(salesMappings).includes(opt.field) && salesMappings[schema.field] !== opt.field}>
+                                                                    {opt.label} ({opt.field})
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </TableCell>
                                                 {displaySales.map((sale, saleIdx) => (
-                                                    <TableCell key={saleIdx} className="font-mono text-sm max-w-[200px] truncate" title={String(sale[schema.field] || "")}>
-                                                        {getDisplayValue(sale[schema.field])}
+                                                    <TableCell key={saleIdx} className="font-mono text-sm max-w-[180px] truncate" title={String(sale[salesMappings[schema.field] || schema.field] || "")}>
+                                                        {getDisplayValue(sale[salesMappings[schema.field] || schema.field])}
                                                     </TableCell>
                                                 ))}
-                                                {/* Fill empty columns if less than 3 sales */}
                                                 {Array.from({ length: Math.max(0, 3 - displaySales.length) }).map((_, emptyIdx) => (
                                                     <TableCell key={`empty-${emptyIdx}`}>-</TableCell>
                                                 ))}
@@ -173,20 +230,36 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
                                     <TableHeader className="bg-secondary/50">
                                         <TableRow>
                                             <TableHead className="font-semibold text-foreground w-[20%]">DB 스키마 컬럼</TableHead>
-                                            <TableHead className="font-semibold text-foreground w-[15%]">항목 설명</TableHead>
+                                            <TableHead className="font-semibold text-foreground w-[20%]">항목 매핑 (수정 가능)</TableHead>
                                             {displayMenus.map((_, idx) => (
                                                 <TableHead key={idx} className="font-semibold text-primary">Detail 데이터 #{idx + 1}</TableHead>
                                             ))}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {targetMenuSchema.map((schema, idx) => (
+                                        {targetMenuSchemaOptions.map((schema, idx) => (
                                             <TableRow key={idx} className="transition-colors hover:bg-muted/30">
                                                 <TableCell className="font-medium font-mono text-sm">{schema.field}</TableCell>
-                                                <TableCell className="text-muted-foreground text-sm">{schema.label}</TableCell>
+                                                <TableCell className="text-muted-foreground text-sm">
+                                                    <Select
+                                                        value={menuMappings[schema.field] || schema.field}
+                                                        onValueChange={(val) => handleMenuMappingChange(schema.field, val)}
+                                                    >
+                                                        <SelectTrigger className="w-[180px] h-8 text-xs bg-white">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {targetMenuSchemaOptions.map(opt => (
+                                                                <SelectItem key={opt.field} value={opt.field} disabled={Object.values(menuMappings).includes(opt.field) && menuMappings[schema.field] !== opt.field}>
+                                                                    {opt.label} ({opt.field})
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </TableCell>
                                                 {displayMenus.map((menu, menuIdx) => (
-                                                    <TableCell key={menuIdx} className="font-mono text-sm max-w-[200px] truncate" title={String(menu[schema.field] || "")}>
-                                                        {getDisplayValue(menu[schema.field])}
+                                                    <TableCell key={menuIdx} className="font-mono text-sm max-w-[180px] truncate" title={String(menu[menuMappings[schema.field] || schema.field] || "")}>
+                                                        {getDisplayValue(menu[menuMappings[schema.field] || schema.field])}
                                                     </TableCell>
                                                 ))}
                                                 {Array.from({ length: Math.max(0, 3 - displayMenus.length) }).map((_, emptyIdx) => (
@@ -208,3 +281,4 @@ export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
         </Card>
     );
 }
+

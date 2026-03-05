@@ -49,7 +49,8 @@ export async function POST(request: Request) {
 
             const child = spawn('node', [scriptPath, String(storeId), loginId, loginPw, targetDate.toISOString()], {
                 detached: true,
-                stdio: 'ignore'
+                stdio: 'ignore',
+                env: { ...process.env, LANG: 'ko_KR.UTF-8', LC_ALL: 'ko_KR.UTF-8' }
             });
             child.unref();
 
