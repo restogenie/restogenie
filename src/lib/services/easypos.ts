@@ -1,5 +1,6 @@
 import { prisma } from "../db";
 import { format } from "date-fns";
+import iconv from "iconv-lite";
 
 export class EasyposSyncService {
     private kiccApiUrl = "https://poson.easypos.net/servlet/EasyPosJsonChannelSVL?cmd=TlxSyncEasyposSaleCMD";
@@ -34,7 +35,12 @@ export class EasyposSyncService {
             });
 
             if (response.ok) {
-                const data = await response.json();
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                // Easypos/KICC legacy API often uses EUC-KR or CP949
+                const decodedText = iconv.decode(buffer, 'euc-kr');
+                const data = JSON.parse(decodedText);
+
                 if (data.ret_code === "0000") {
                     return data;
                 }

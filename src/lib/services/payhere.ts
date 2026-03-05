@@ -1,5 +1,6 @@
 import { prisma } from "../db";
 import { format, parseISO } from "date-fns";
+import iconv from "iconv-lite";
 
 export class PayhereSyncService {
     private baseUrl = "https://openapi.payhere.in/api/v1";
@@ -17,7 +18,11 @@ export class PayhereSyncService {
                 headers: { "Authorization": this.accessToken.trim() }
             });
             if (response.ok) {
-                return await response.json();
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                // Payhere usually returns utf-8, but we force it cleanly
+                const decodedText = iconv.decode(buffer, 'utf8');
+                return JSON.parse(decodedText);
             } else if (response.status === 401) {
                 console.error("Fetch auth error for store", this.storeId);
             }

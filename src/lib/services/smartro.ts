@@ -1,5 +1,6 @@
 import { prisma } from "../db";
 import { format, parse } from "date-fns";
+import iconv from "iconv-lite";
 
 export class SmartroSyncService {
     private apiBaseUrl = "https://t-exttran.smilebiz.co.kr/V1/sales";
@@ -25,7 +26,10 @@ export class SmartroSyncService {
         try {
             const response = await fetch(url, { headers });
             if (response.ok) {
-                return await response.json();
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const decodedText = iconv.decode(buffer, 'euc-kr');
+                return JSON.parse(decodedText);
             }
         } catch (e) {
             console.error("Failed to fetch Smartro API: ", e);
