@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useStoreContext } from "@/lib/StoreContext";
+import { useStore } from "@/lib/StoreContext";
 import { Loader2, Database, TableProperties } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
@@ -16,7 +16,7 @@ interface StepTwoProps {
 }
 
 export function StepTwoMapping({ onNext, onPrev }: StepTwoProps) {
-    const { currentStore } = useStoreContext();
+    const { currentStore } = useStore();
     const [salesDetails, setSalesDetails] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
