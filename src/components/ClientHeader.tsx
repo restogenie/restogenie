@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/StoreContext";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings, User, Store as StoreIcon, KeyRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
     Select,
@@ -14,6 +14,14 @@ import { toast } from "react-hot-toast";
 import { useState } from "react";
 import { AddStoreModal } from "./AddStoreModal";
 import { StoreMembersModal } from "./StoreMembersModal";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function ClientHeader() {
     const { stores, currentStore, setCurrentStore, isLoading } = useStore();
@@ -49,10 +57,6 @@ export function ClientHeader() {
                     <Select
                         value={currentStore?.id.toString()}
                         onValueChange={(val) => {
-                            if (val === "GO_SETTINGS") {
-                                router.push("/settings");
-                                return;
-                            }
                             if (val === "ADD_NEW_STORE") {
                                 setIsAddModalOpen(true);
                                 return;
@@ -74,9 +78,6 @@ export function ClientHeader() {
                                     {store.name}
                                 </SelectItem>
                             ))}
-                            <SelectItem value="GO_SETTINGS" className="text-gray-800 font-bold border-t border-gray-100 mt-1 cursor-pointer">
-                                ⚙️ 설정 및 관리
-                            </SelectItem>
                             <SelectItem value="MANAGE_MEMBERS" className="text-gray-600 font-bold cursor-pointer">
                                 👥 직원 및 권한 관리
                             </SelectItem>
@@ -91,13 +92,32 @@ export function ClientHeader() {
                     + 신규 API 설정
                 </a>
 
-                <button
-                    onClick={handleLogout}
-                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                    title="로그아웃"
-                >
-                    <LogOut className="w-4 h-4" />
-                </button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors outline-none cursor-pointer" title="설정">
+                        <Settings className="w-5 h-5" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl shadow-lg border-[#E5E8EB]">
+                        <DropdownMenuLabel className="font-semibold text-[#191F28] py-2">설정 및 메뉴</DropdownMenuLabel>
+                        <DropdownMenuSeparator className="bg-[#F2F4F6]" />
+                        <DropdownMenuItem className="cursor-pointer py-2.5 hover:bg-[#F2F4F6]" onClick={() => router.push("/settings?tab=personal")}>
+                            <User className="mr-3 h-4 w-4 text-blue-500" />
+                            <span className="font-medium text-[#4E5968]">개인정보 관리</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer py-2.5 hover:bg-[#F2F4F6]" onClick={() => router.push("/settings?tab=business")}>
+                            <StoreIcon className="mr-3 h-4 w-4 text-emerald-500" />
+                            <span className="font-medium text-[#4E5968]">사업장 정보 관리</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer py-2.5 hover:bg-[#F2F4F6]" onClick={() => router.push("/settings?tab=connections")}>
+                            <KeyRound className="mr-3 h-4 w-4 text-purple-500" />
+                            <span className="font-medium text-[#4E5968]">API/POS 연결 설정</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-[#F2F4F6]" />
+                        <DropdownMenuItem className="cursor-pointer py-2.5 text-red-500 focus:text-red-600 focus:bg-red-50" onClick={handleLogout}>
+                            <LogOut className="mr-3 h-4 w-4" />
+                            <span className="font-medium">로그아웃</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
 
             <AddStoreModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
