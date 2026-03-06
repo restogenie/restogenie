@@ -6,6 +6,10 @@ export interface Store {
     id: number;
     name: string;
     business_number: string;
+    business_condition?: string | null;
+    business_type?: string | null;
+    opening_date?: string | null;
+    phone?: string | null;
     auth_code_1?: string | null;
 }
 

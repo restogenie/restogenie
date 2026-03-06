@@ -58,18 +58,18 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen w-full items-center justify-center bg-toss-bg p-4 flex-col gap-6">
+        <div className="flex min-h-screen w-full items-center justify-center bg-[#F2F4F6] p-4 flex-col gap-6">
             <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-toss-blue text-white font-bold flex items-center justify-center rounded-xl mb-3 shadow-sm text-xl">
+                <div className="w-12 h-12 bg-[#3182F6] text-white font-bold flex items-center justify-center rounded-xl mb-3 shadow-sm text-xl">
                     R
                 </div>
-                <h1 className="text-xl font-bold text-toss-dark">RestoGenie</h1>
+                <h1 className="text-xl font-bold text-[#191F28]">RestoGenie</h1>
             </div>
 
-            <Card className="w-full max-w-[400px] shadow-sm border-toss-border/40">
+            <Card className="w-full max-w-[400px] shadow-sm border-[#E5E8EB]/40">
                 <CardHeader className="space-y-1 text-center pt-8">
                     <CardTitle className="text-2xl font-bold tracking-tight text-[#191F28]">로그인</CardTitle>
-                    <CardDescription className="text-toss-gray text-[15px] pt-1">
+                    <CardDescription className="text-[#8B95A1] text-[15px] pt-1">
                         RestoGenie 계정으로 로그인해주세요.
                     </CardDescription>
                 </CardHeader>
@@ -83,7 +83,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="h-[52px] px-4 rounded-xl bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-toss-blue/30 text-[15px]"
+                                className="h-[52px] px-4 rounded-xl bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-[#3182F6]/30 text-[15px]"
                             />
                             <Input
                                 id="password"
@@ -92,13 +92,13 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="h-[52px] px-4 rounded-xl bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-toss-blue/30 text-[15px]"
+                                className="h-[52px] px-4 rounded-xl bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-[#3182F6]/30 text-[15px]"
                             />
                         </div>
                         {error && <p className="text-sm text-red-500 font-medium text-center">{error}</p>}
                         <Button
                             type="submit"
-                            className="w-full h-[52px] rounded-xl bg-toss-blue hover:bg-toss-blueHover text-white font-semibold text-[15px] shadow-sm transition-all mt-2"
+                            className="w-full h-[52px] rounded-xl bg-[#3182F6] hover:bg-[#1b64da] text-white font-semibold text-[15px] shadow-sm transition-all mt-2"
                             disabled={loading}
                         >
                             {loading ? "로그인 중..." : "로그인"}
