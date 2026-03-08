@@ -17,6 +17,14 @@ export async function POST(request: Request) {
             }
         }
 
+        let daysToSync = 1;
+
+        if (body.days_to_sync) {
+            daysToSync = parseInt(body.days_to_sync, 10);
+            if (isNaN(daysToSync) || daysToSync < 1) daysToSync = 1;
+            if (daysToSync > 30) daysToSync = 30; // Hard limit
+        }
+
         let storesToSync = [];
 
         if (body.store_id) {
@@ -44,8 +52,17 @@ export async function POST(request: Request) {
         for (const { storeId, token } of storesToSync) {
             const service = new PayhereSyncService(storeId, token);
             try {
-                const res = await service.runSync(targetDate);
-                results.push({ store_id: storeId, status: "success", data: res });
+                // Loop over days
+                for (let i = 0; i < daysToSync; i++) {
+                    const syncDate = new Date(targetDate);
+                    syncDate.setDate(syncDate.getDate() - i);
+                    const res = await service.runSync(syncDate);
+                    results.push({ store_id: storeId, status: "success", data: res, synced_date: format(syncDate, 'yyyy-MM-dd') });
+
+                    if (i < daysToSync - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                }
             } catch (err: any) {
                 await sendSystemAlert(`Payhere Sync Failed for Store ${storeId}`, err.message);
                 results.push({ store_id: storeId, status: "error", error: err.message });
@@ -54,7 +71,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             status: "success",
-            message: `Payhere sync processing completed for ${format(targetDate, 'yyyy-MM-dd')}`,
+            message: `Payhere sync processing completed up to ${daysToSync} days for ${format(targetDate, 'yyyy-MM-dd')}`,
             data: results
         });
     } catch (error: any) {

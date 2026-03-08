@@ -11,6 +11,8 @@ import { toast } from 'react-hot-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { DateRange } from "react-day-picker";
+import { PresetDateRangePicker } from "@/components/Dashboard/PresetDateRangePicker";
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -44,8 +46,10 @@ export default function DashboardPage() {
     const [connections, setConnections] = useState<any[]>([]);
 
     // Date Filters
-    const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
-    const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [date, setDate] = useState<DateRange | undefined>({
+        from: subDays(new Date(), 30),
+        to: new Date()
+    });
 
     const fetchSales = async (isRefresh = false) => {
         if (!currentStore) return;
@@ -64,7 +68,10 @@ export default function DashboardPage() {
                 return;
             }
 
-            const res = await axios.get(`/api/v1/sales?store_id=${currentStore.id}&limit=5000&start_date=${startDate}&end_date=${endDate}`, {
+            const startDateStr = date?.from ? format(date.from, 'yyyy-MM-dd') : format(subDays(new Date(), 30), 'yyyy-MM-dd');
+            const endDateStr = date?.to ? format(date.to, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+
+            const res = await axios.get(`/api/v1/sales?store_id=${currentStore.id}&limit=5000&start_date=${startDateStr}&end_date=${endDateStr}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
@@ -118,10 +125,10 @@ export default function DashboardPage() {
     };
 
     useEffect(() => {
-        if (currentStore) {
+        if (currentStore && date?.from && date?.to) {
             fetchSales();
         }
-    }, [startDate, endDate, currentStore]);
+    }, [date, currentStore]);
 
     const downloadExcel = () => {
         if (!sales || sales.length === 0) {
@@ -147,7 +154,9 @@ export default function DashboardPage() {
             XLSX.utils.book_append_sheet(workbook, worksheet, "매출내역");
 
             // 3. Export
-            const fileName = `RestoGenie_매출내역_${startDate}_${endDate}.xlsx`;
+            const startDateStr = date?.from ? format(date.from, 'yyyy-MM-dd') : '';
+            const endDateStr = date?.to ? format(date.to, 'yyyy-MM-dd') : '';
+            const fileName = `RestoGenie_매출내역_${startDateStr}_${endDateStr}.xlsx`;
             XLSX.writeFile(workbook, fileName);
             toast.success("엑셀 다운로드가 완료되었습니다.");
         } catch (e) {
@@ -173,12 +182,7 @@ export default function DashboardPage() {
                     <p className="text-[#8B95A1] font-medium">연동된 결제 채널의 실시간 매출 내역을 확인하세요.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">
-                    <div className="flex items-center bg-white border border-[#E5E8EB] rounded-xl px-3 py-2 shadow-sm font-medium text-sm text-[#4E5968] gap-2 w-full sm:w-auto">
-                        <CalendarRange className="w-4 h-4 text-[#8B95A1] flex-shrink-0" />
-                        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="outline-none bg-transparent" />
-                        <span>~</span>
-                        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="outline-none bg-transparent" />
-                    </div>
+                    <PresetDateRangePicker date={date} setDate={setDate} />
 
                     <button
                         onClick={() => fetchSales(true)}
