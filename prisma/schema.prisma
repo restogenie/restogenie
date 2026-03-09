@@ -150,6 +150,8 @@ model MenuMapping {
   provider        String   // e.g. payhere, easypos, smartro
   original_name   String   // The raw string from POS
   normalized_name String   // The master aligned name
+  custom_id       String?  // User-defined manual ID
+  is_option       Boolean  @default(false) // Whether this is an option or main menu
   created_at      DateTime? @default(now())
   updated_at      DateTime? @updatedAt
 

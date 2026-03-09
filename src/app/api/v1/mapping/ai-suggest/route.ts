@@ -68,8 +68,12 @@ export async function POST(request: Request) {
 You are an expert F&B menu cataloger. 
 I will provide a JSON array of raw POS menu names from various providers. 
 Your task is to normalize them into clean, standard menu names.
-For example: '아아' -> '아메리카노', '클래식치즈버거(세트)' -> '클래식치즈버거', '펩시제로콜라' -> '콜라'.
-If it is a meaningless option modifier (e.g., '얼음많이', '샷추가'), return empty string for normalized_name.
+
+RULES:
+1. 'normalized_name': The standard aligned name. e.g. '아아', '아이스 아메리카노(L)' -> '아메리카노'. If it is a meaningless option modifier (e.g., '얼음많이', '샷추가'), return empty string.
+2. 'custom_id': A short, unique uppercase ID for the menu (e.g., 'MENU_AMERICANO', 'M001'). Try to use consistent prefixes for related items (like 'BURGER_XXXX').
+3. 'is_option': Boolean. True if the item is just an option/modifier (e.g., '샷추가', '사이즈업', '얼음많이'), False if it is a main standalone menu item.
+
 If you are unsure, provide your best guess.
 
 Input:
@@ -78,7 +82,8 @@ ${JSON.stringify(unmappedData)}
 Output FORMAT requirement:
 Return ONLY a valid JSON array of objects, with NO Markdown wrappers, NO code blocks, like this:
 [
-  { "provider": "payhere", "original_name": "아아", "normalized_name": "아메리카노" }
+  { "provider": "payhere", "original_name": "아아", "normalized_name": "아메리카노", "custom_id": "DRINK_AMERICANO", "is_option": false },
+  { "provider": "easypos", "original_name": "샷추가", "normalized_name": "", "custom_id": "OPT_SHOT", "is_option": true }
 ]
 `;
 
@@ -96,37 +101,11 @@ Return ONLY a valid JSON array of objects, with NO Markdown wrappers, NO code bl
             return NextResponse.json({ detail: "AI 응답을 해석하는데 실패했습니다." }, { status: 500 });
         }
 
-        // 3. Save to database
-        let savedCount = 0;
-        for (const item of parsedAiArray) {
-            if (item.normalized_name && item.normalized_name.trim() !== '') {
-                // Upsert to ensure no duplicate errors if multiple providers had same name concurrently
-                const existing = await prisma.menuMapping.findFirst({
-                    where: {
-                        store_id: storeId,
-                        provider: item.provider,
-                        original_name: item.original_name
-                    }
-                });
-
-                if (!existing) {
-                    await prisma.menuMapping.create({
-                        data: {
-                            store_id: storeId,
-                            provider: item.provider,
-                            original_name: item.original_name,
-                            normalized_name: item.normalized_name
-                        }
-                    });
-                    savedCount++;
-                }
-            }
-        }
-
         return NextResponse.json({
             status: "success",
-            message: `AI 스캔 완료! ${savedCount}건의 메뉴가 자동으로 매핑되었습니다.`,
-            count: savedCount
+            message: `AI 스캔 완료! ${parsedAiArray.length}건의 메뉴에 대한 매핑 초안이 제안되었습니다.`,
+            count: parsedAiArray.length,
+            data: parsedAiArray
         });
 
     } catch (error: any) {
