@@ -38,8 +38,8 @@ export async function POST(request: Request) {
         }
 
         // 1. Find up to 50 unmapped unique items
-        const unmappedData = await prisma.$queryRaw<Array<{ product_name: string; provider: string }>>`
-            SELECT m.product_name, s.provider
+        const unmappedData = await prisma.$queryRaw<Array<{ original_name: string; provider: string }>>`
+            SELECT m.product_name as original_name, s.provider
             FROM menu_db m
             JOIN sales_db s ON m.oid = s.oid
             WHERE s.store_id = ${storeId}

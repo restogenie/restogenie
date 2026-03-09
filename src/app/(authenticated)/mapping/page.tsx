@@ -110,7 +110,11 @@ export default function MappingPage() {
                     // Apply AI suggestions to draft local state
                     const newDrafts = { ...draftMappings };
                     res.data.data.forEach((aiItem: any) => {
-                        const key = `${aiItem.provider}_${aiItem.original_name}`;
+                        const originalName = aiItem.original_name || aiItem.product_name;
+                        if (!originalName) return; // Skip if somehow null
+                        const provider = (aiItem.provider || '').toLowerCase();
+
+                        const key = `${provider}_${originalName}`;
                         newDrafts[key] = {
                             normalized_name: aiItem.normalized_name || '',
                             custom_id: aiItem.custom_id || '',
