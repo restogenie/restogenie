@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         if (body.days_to_sync) {
             daysToSync = parseInt(body.days_to_sync, 10);
             if (isNaN(daysToSync) || daysToSync < 1) daysToSync = 1;
-            if (daysToSync > 120) daysToSync = 120; // Hard limit increased for history backfill
+            if (daysToSync > 30) daysToSync = 30; // Hard limit
         }
 
         let storesToSync = [];
