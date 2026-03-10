@@ -1,0 +1,1392 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0033)https://t-exttran.smilebiz.co.kr/ -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+
+
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    
+<title>SMARTRO API GUIDE</title>
+
+<link rel="stylesheet" type="text/css" href="./08-세트대체상품조회_files/index_styles.css">
+<link rel="stylesheet" type="text/css" href="./08-세트대체상품조회_files/jquery-ui-1.9.0.custom.css">
+    
+<script type="text/javascript" src="./08-세트대체상품조회_files/jquery-1.8.2.js"></script>
+<script type="text/javascript" src="./08-세트대체상품조회_files/jquery-ui-1.9.0.custom.js"></script>
+<script type="text/javascript" src="./08-세트대체상품조회_files/jquery.json-editor.min.js"></script><style>/* Syntax highlighting for JSON objects */ .json-editor-blackbord {   background: #1c2833;   color: #fff;   font-size: 13px;   font-family: Menlo,Monaco,Consolas,"Courier New",monospace; } @media screen and (min-width: 1600px) {   .json-editor-blackbord {     font-size: 14px;   } }  ul.json-dict, ol.json-array {   list-style-type: none;   margin: 0 0 0 1px;   border-left: 1px dotted #525252;   padding-left: 2em; } .json-string {   /*color: #0B7500;*/   /*color: #BCCB86;*/   color: #0ad161; } .json-literal {   /*color: #1A01CC;*/   /*font-weight: bold;*/   color: #ff8c00; } .json-url {   color: #1e90ff; } .json-property {   color: #4fdee5;   line-height: 160%;   font-weight: 500; }  /* Toggle button */ a.json-toggle {   position: relative;   color: inherit;   text-decoration: none;   cursor: pointer; } a.json-toggle:focus {   outline: none; } a.json-toggle:before {   color: #aaa;   content: "\25BC"; /* down arrow */   position: absolute;   display: inline-block;   width: 1em;   left: -1em; } a.json-toggle.collapsed:before {   transform: rotate(-90deg); /* Use rotated down arrow, prevents right arrow appearing smaller than down arrow in some browsers */   -ms-transform: rotate(-90deg);   -webkit-transform: rotate(-90deg); }   /* Collapsable placeholder links */ a.json-placeholder {   color: #aaa;   padding: 0 1em;   text-decoration: none; } a.json-placeholder:hover {   text-decoration: underline; }</style>
+
+<script language="javascript"> 
+
+	/*******************************************************************************************************************************
+	 ** Variable 
+	 ******************************************************************************************************************************/
+	var PG_SVC_PAGE_URL	= "https://api.smartropay.co.kr/v2/api/doc";	 
+	 
+	var SVC_CTGR				= "POS";
+	var EDIT_MODE				= "N";
+	
+	var SVC_TYPE_DATA			= new Array();
+	var NAV_MENU_DATA 			= new Array();
+	var CON_SPEC_DATA			= new Array();
+	
+	var NAV_MENU_INDEX			= 0;
+	var NAV_MENU_API_KEY		= "";
+	var NAV_MENU_METHOD_TYPE	= "";
+	var ARR_TAB_SIZE			= 30;
+
+
+	/*******************************************************************************************************************************
+	 ** Function (Init)
+	 ******************************************************************************************************************************/	
+	function initIndexPage(initFlag) {
+		if(SVC_CTGR == "PG") {
+			window.open(PG_SVC_PAGE_URL);
+		} 
+		
+		if((initFlag || SVC_CTGR != "PG")) {
+			SVC_CTGR = ( (initFlag && SVC_CTGR == "PG") ? "POS" : SVC_CTGR );
+			
+			initApiSvcDataInfo();
+			initSvcCgtgrDataInfo();
+			
+			switch(EDIT_MODE) {
+				case "Y":
+					initNavMenuEditArea();
+					break;
+			
+				case "N":
+					initNavMenuDataArea();
+					break;
+			}
+		}
+	}	 
+	 
+	 
+	function initApiSvcDataInfo() {
+		SVC_TYPE_DATA	= new Array();
+		NAV_MENU_DATA	= new Array();
+		CON_SPEC_DATA 	= new Array();
+		
+		$.ajax({
+        	url : "/getApiSvcInfoData",
+		  	type : "GET",
+			async: false,
+			contentType: "application/json; charset=UTF-8",
+			dataType : "json",				
+			data: {
+  				SVC_CTGR: SVC_CTGR
+			},
+			success : function(data) {
+				if(data.code == "0000") {
+					SVC_TYPE_DATA = data.data.API_SVC_TYPE_INFO;
+					NAV_MENU_DATA = data.data.API_SVC_INFO;
+					CON_SPEC_DATA = data.data.API_SVC_DTL_INFO;
+				}
+			},
+       		error : function(request, status, err) {
+       		  console.log(err);
+			} 
+		});
+	}
+	
+	
+	function initSvcCgtgrDataInfo() {
+		$(".top_inner .link ul li").css("padding", "75px");	
+		$(".link > ul > li > a").removeClass("sel");
+		$("#svc_ctgr_" + SVC_CTGR.toLowerCase()).addClass("sel");
+	}
+	
+	
+	function initNavMenuEditArea() {
+		$("#div_nav_btn").show();
+		
+		$(".left_menu").html("");
+		$(".left_menu").append(
+			"<div class='tbl-list'><table><colgroup><col style='width:10%;'><col style='width:80%;'><col style='width:10%;'></colgroup>" +
+			"<thead></thead><tbody></tbody></table></div>"
+		);
+		
+		$.each(NAV_MENU_DATA, function(index, item) {
+			$(".left_menu .tbl-list > table > tbody").append( getNavMenuEditRowStr(index, item.SVC_TYPE, item.API_NO, item.API_NAME) );			
+			NAV_MENU_INDEX++;	
+				
+			if(index == 0) {
+				$("#div_api_baseEdit").show();
+				$("#div_api_typeEdit").show();
+					
+				$(".edit_btn").show();
+
+				$("#txt_request_area").show();
+				$("#txt_response_area").show();
+					
+				initContentEditArea(item);
+			}
+		});
+		
+		$(".left_menu .tbl-list > table > tbody").sortable();
+	}
+	
+	
+	function initNavMenuDataArea() {
+		var curSvcType = "";
+		$(".left_menu > ul").html("");
+		$.each(NAV_MENU_DATA, function(index, item) {
+			curSvcType = ( index == 0 ? item.SVC_TYPE : curSvcType );
+			
+			if(index == 0 || curSvcType != item.SVC_TYPE) {
+				curSvcType = item.SVC_TYPE;	
+				$(".left_menu > ul").append("<li class='depth1'><a>" + item.SVC_TYPE_NAME + "</a></li>");
+			}
+			
+			$(".left_menu > ul").append(
+				"<li class='depth2'>" + 
+				(item.SVC_TYPE == "INTR" || item.SVC_TYPE == "ETC" ? "" : 
+					"<a class='" + item.METHOD_TYPE.toLowerCase() + "'>" + item.METHOD_TYPE + "</a>") + 
+				"<a id='" + item.API_KEY + "'class='left-padding " + (index == 0 ? "on" : "") + "'>" + item.API_NAME + "</a></li>"
+			);
+			
+			if(index == 0) {
+				initContentDataArea(item);
+			}
+		});
+	}
+	
+	
+	function initContentEditArea(apiSvcData) {
+		var apiSvcDtlData = new Array();
+		apiSvcDtlData = getApiDtlData(apiSvcData.API_KEY);
+		NAV_MENU_API_KEY = apiSvcData.API_KEY;
+		NAV_MENU_METHOD_TYPE = apiSvcData.METHOD_TYPE;
+		
+		$(".content_box").hide();
+		
+		switch(apiSvcData.SVC_TYPE) {
+			case "INTR":
+				break;
+		
+			case "ETC":
+				$("#div_etc_content").show();
+				
+				$("#head_etc_name").text("[" + apiSvcData.SVC_TYPE_NAME + "]  " + apiSvcData.API_NAME.replace(/<br>/gi, " "));
+				setContentEtcEditArea(apiSvcData.API_NAME, apiSvcDtlData.NONE_REP_SPEC);
+				break;
+			
+			default: 
+				$("#div_api_content").show();
+				
+				$("#head_api_name").text("[" + apiSvcData.SVC_TYPE_NAME + "]  " + apiSvcData.API_NAME.replace(/<br>/gi, " "));
+				$("#sel_api_method").val(apiSvcData.METHOD_TYPE);
+				$("#ipt_api_url").val(apiSvcData.API_URL);
+				
+				$("#div_api_typeEdit > ul > li").removeClass("on off");
+				$("#div_api_typeEdit > ul > li").addClass("off");
+				$("#div_api_typeEdit .left_edit").removeClass("off");
+				$("#div_api_typeEdit .left_edit").addClass("on");
+				( SVC_CTGR == "O2O" ? $("#div_api_typeEdit").hide() : $("#div_api_typeEdit").show() );
+				
+				setContentSpecEditArea(apiSvcData.API_KEY, apiSvcData.METHOD_TYPE, "NONE", apiSvcDtlData);
+		}
+	}
+	
+	
+	function initContentDataArea(apiSvcData) {
+		var apiSvcDtlData = new Array();
+		apiSvcDtlData = getApiDtlData(apiSvcData.API_KEY);
+		
+		$(".content_box").hide();
+		
+		switch(apiSvcData.SVC_TYPE) {
+			case "INTR":
+				$("#div_intr_content").show();
+				break;
+				
+			case "ETC":
+				$("#div_etc_content").show();
+				
+				$("#head_etc_name").text(apiSvcData.API_NAME.replace(/<br>/gi, " "));
+				setContentEtcDataArea(apiSvcData.API_NAME, apiSvcDtlData.NONE_REP_SPEC);
+				break;
+				
+			default:
+				$("#div_api_content").show();
+				
+				$("#div_api_baseInfo").show();
+				$("#div_api_typeInfo").show();
+				
+				$("#head_api_name").text(apiSvcData.API_NAME.replace(/<br>/gi, " "));
+				$("#sp_api_method").attr("class", ( apiSvcData.METHOD_TYPE == "GET" ? "span_method_get" : "span_method_post" ))
+				$("#sp_api_method").text(apiSvcData.METHOD_TYPE);
+				$("#sp_api_url").text(apiSvcData.API_URL);
+				
+				if(apiSvcData.NONE_FLAG == "Y") {
+					$("#div_api_typeInfo").hide();
+					setContentSpecDataArea(apiSvcData.API_KEY, apiSvcData.METHOD_TYPE, "NONE", apiSvcDtlData);
+					
+				} else {
+					$("#div_api_typeInfo li").removeClass("on off");
+					$("#div_api_typeInfo .left").addClass("on");
+					$("#div_api_typeInfo .right").addClass("off");
+					$("#div_api_typeInfo").show();
+					
+					setContentSpecDataArea(apiSvcData.API_KEY, apiSvcData.METHOD_TYPE, "BRAND", apiSvcDtlData);
+				}
+		
+		}
+	}
+
+	
+	
+	/*******************************************************************************************************************************
+	 ** Function (User) - Get
+	 ******************************************************************************************************************************/
+	function getApiData(apiKey) {
+		var result = new Array();
+		$.each(NAV_MENU_DATA, function(index, value) {
+			if(apiKey == value.API_KEY) {
+				result = value;
+				return false;
+			}
+		});
+		
+		return result;
+	}	 
+	 
+	 
+	function getApiDtlData(apiKey) {
+		var result = new Array();
+		$.each(CON_SPEC_DATA, function(index, value) {
+			if(apiKey == value.API_KEY) {
+				result = value;
+				return false;
+			}
+		});
+		
+		return result;
+	}
+	
+	
+	function getSpecRequestJsonText(paramName) {
+		var htmlStr = "";
+		$.each(paramName, function(index, item) {
+			var paramData = item.split("=");
+			htmlStr += "<span class='key'>" + paramData[0] + "</span>=<span class='value'>" + paramData[1] + "</span>";
+
+			if((index+1) < paramName.length) {
+				htmlStr += "&"	
+			}
+		});
+		
+		return htmlStr;		
+	}
+	
+	
+	function getNavMenuEditRowStr(index, svcType, apiNo, apiName) {
+		var htmlStr = "";
+		htmlStr += "<tr class='" + (index == 0 ? "on" : "") + "'>";
+		htmlStr += "<td><img class='btn_sort_list' src='/images/icon_sort_type3.png' width='20px' height='20px' title='이동' style='cursor:pointer;'></td>"
+		htmlStr += "<td><select id='sel_svc_type' class='select'>";
+				
+		$.each(SVC_TYPE_DATA, function(index, item) {
+			htmlStr += "<option value='" + item.SVC_TYPE.replace(" ", "") + "' " + (item.SVC_TYPE.replace(" ", "") == svcType ? "selected" : "") + ">" + 
+			item.SVC_TYPE_NAME + "</option>"
+		});
+				
+		htmlStr += "</select><input id='ipt_api_" + index + "' apiNo='" + apiNo + "' value='" + apiName + "' type='text' class='edit_ipt' /></td>";					
+		htmlStr += "<td><img class='btn_del_list' src='/images/icon_minus_type4.png' width='20px' height='20px' title='삭제' style='cursor:pointer;'></td></tr>";
+		
+		return htmlStr;
+	}
+	
+	
+	function getSpecHeaderEditRowStr(name, value, description) {
+		var htmlStr = "";
+		htmlStr += "<tr><td><img class='btn_sort_list' src='/images/icon_sort_type3.png' width='20px' height='20px' title='이동' style='cursor:pointer;'></td>"; 
+		htmlStr += "<td><input type='text' value='" + name + "'></td>" + "<td><input type='text' value='" + value + "'></td>"; 
+		htmlStr += "<td><input type='text' value='" + description + "'></td>";
+		htmlStr += "<td><img class='btn_del_list' src='/images/icon_minus_type4.png' width='20px' height='20px' title='삭제' style='cursor:pointer;'></td></tr>"; 
+		
+		return htmlStr;
+	}
+	
+	
+	function getSpecRequestEditRowStr(name, type, size, description, optional) {
+		var htmlStr = "<tr><td><img class='btn_sort_list' src='/images/icon_sort_type3.png' width='20px' height='20px' title='이동' style='cursor:pointer;'></td>";
+		htmlStr += "<td><input type='text' value='" + name + "'></td>" + "<td><input type='text' value='" + type + "'></td>";
+		htmlStr += "<td><input type='number' value='" + size + "'></td><td><input type='text' value='" + description + "'></td>";
+		htmlStr += "<td><input type='checkbox'" + (optional == "Y" ? "checked" : '') + "></td>";
+		htmlStr += "<td><img class='btn_del_list' src='/images/icon_minus_type4.png' width='20px' height='20px' title='삭제' style='cursor:pointer;'></td></tr>";
+		
+		return htmlStr;
+	}
+	
+	
+	function getSpecResponseEditRowStr(name, type, size, description) {
+		var htmlStr = "<tr><td><img class='btn_sort_list' src='/images/icon_sort_type3.png' width='20px' height='20px' title='이동' style='cursor:pointer;'></td>";
+		htmlStr += "<td><input type='text' value='" + name + "'></td>" + "<td><input type='text' value='" + type + "'></td>";
+		htmlStr += "<td><input type='number' value='" + size + "'></td>" + "<td><input type='text' value='" + description + "'></td>";
+		htmlStr += "<td><img class='btn_del_list' src='/images/icon_minus_type4.png' width='20px' height='20px' title='삭제' style='cursor:pointer;'></td></tr>";
+		
+		return htmlStr;
+	}
+	
+	
+	function getEtcErrEditRowStr(code, name, msg) {
+		var htmlStr = "<tr><td><img class='btn_sort_list' src='/images/icon_sort_type3.png' width='20px' height='20px' title='이동' style='cursor:pointer;'></td>";
+		htmlStr += "<td><input type='text' value='" + code + "'></td>" + "<td><input type='text' value='" + name + "'></td>";
+		htmlStr += "<td><input type='text' value='" + msg + "'></td>";
+		htmlStr += "<td><img class='btn_del_list' src='/images/icon_minus_type4.png' width='20px' height='20px' title='삭제' style='cursor:pointer;'></td></tr>";
+		
+		return htmlStr;
+	}
+	
+	
+	function getEtcFaqEditRowStr(question, answer) {
+		var htmlStr = "<tr><td><img class='btn_sort_list' src='/images/icon_sort_type3.png' width='20px' height='20px' title='이동' style='cursor:pointer;'></td>";
+		htmlStr += "<td><input type='text' value='" + question + "'></td>" + "<td><input type='text' value='" + answer + "'></td>";
+		htmlStr += "<td><img class='btn_del_list' src='/images/icon_minus_type4.png' width='20px' height='20px' title='삭제' style='cursor:pointer;'></td></tr>";
+		
+		return htmlStr;
+	}
+	
+	
+	function checkNavMenuEditData() {
+		var failCount 	= 0;
+		var navEditData = $(".left_menu .tbl-list > table > tbody > tr");
+		
+		for(var idx=0; idx<navEditData.length; idx++) {
+			if (navEditData.eq(idx).find('input[type="text"]').val() == '' || 
+				navEditData.eq(idx).find('input[type="text"]').val().toUpperCase() == 'NEW') {
+				failCount++;
+			}
+		}
+		
+		if(failCount > 0) {
+			alert("저장하려고 하는 API 서비스명이 " + failCount + "건 미 입력되었습니다.\n입력 후 다시 시도해주세요.");
+			return false;
+		} else {
+			return true;
+		}
+	}
+	
+	
+	function getHeaderSpecFormatData(headerSpec) {
+		var headerData = [];
+		
+		for(var idx=0; idx<headerSpec.length; idx++) {
+			var headerObj = {};
+			headerObj.name = headerSpec.eq(idx).find('input[type="text"]').eq(0).val();
+			headerObj.value = headerSpec.eq(idx).find('input[type="text"]').eq(1).val();
+			headerObj.description = headerSpec.eq(idx).find('input[type="text"]').eq(2).val();
+			headerData.push(headerObj);
+		}
+		
+		return headerData;
+	} 
+	
+	
+	function getRequestSpecFormatData(requestSpec) {
+		var requestData = [];
+		
+		for(var idx=0; idx<requestSpec.length; idx++) {
+			var requestObj = {};
+			requestObj.name = requestSpec.eq(idx).find('input[type="text"]').eq(0).val();
+			requestObj.type = requestSpec.eq(idx).find('input[type="text"]').eq(1).val();
+			requestObj.size = requestSpec.eq(idx).find('input[type="number"]').val();
+			requestObj.description = requestSpec.eq(idx).find('input[type="text"]').eq(2).val();
+			requestObj.optional = ( requestSpec.eq(idx).find('input[type="checkbox"]').is(':checked') ? "Y" : "N" );
+			requestData.push(requestObj);
+		}
+		
+		return requestData;
+	}
+	
+	
+	function getResponseSpecFormatData(responseSpec) {
+		var responseData = [];
+		
+		for(var idx=0; idx<responseSpec.length; idx++) {
+			var responseObj = {};
+			responseObj.name = responseSpec.eq(idx).find('input[type="text"]').eq(0).val();
+			responseObj.type = responseSpec.eq(idx).find('input[type="text"]').eq(1).val();
+			responseObj.size = responseSpec.eq(idx).find('input[type="number"]').val();
+			responseObj.description = responseSpec.eq(idx).find('input[type="text"]').eq(2).val();
+			responseData.push(responseObj);
+		}
+		
+		return responseData;
+	}	
+	
+	
+	function getEtcSpecFormatData(etcSpec) {
+		var etcData = [];
+		var apiSvcData = getApiData(NAV_MENU_API_KEY);
+		
+		for(var idx=0; idx<etcSpec.length; idx++) {
+			var etcObj = {};
+			switch(apiSvcData.API_NAME) {
+				case "FAQ":
+					etcObj.Q = etcSpec.eq(idx).find('input[type="text"]').eq(0).val();
+					etcObj.A = etcSpec.eq(idx).find('input[type="text"]').eq(1).val();
+					etcData.push(etcObj);
+					break;
+				
+				default:
+					etcObj.CODE = etcSpec.eq(idx).find('input[type="text"]').eq(0).val();
+					etcObj.NAME = etcSpec.eq(idx).find('input[type="text"]').eq(1).val();
+					etcObj.MSG 	= etcSpec.eq(idx).find('input[type="text"]').eq(1).val();
+					etcData.push(etcObj);
+			}
+		}
+		
+		return etcData;
+	}	
+
+	
+	
+	/*******************************************************************************************************************************
+	 ** Function (User) - Set
+	 ******************************************************************************************************************************/
+	function setContentSpecEditArea(apiKey, apiMethodType, apiType, apiSpecData) {
+		switch(apiType) {
+			case "NONE":
+				setSpecHeaderEditArea(apiSpecData.NONE_HEADER_SPEC);
+				setSpecRequestEditArea(apiMethodType, apiSpecData.NONE_REQ_SPEC, apiSpecData.NONE_REQ_JSON);
+				setSpecResponseEditArea(apiSpecData.NONE_REP_SPEC, apiSpecData.NONE_REP_JSON);
+				
+				break;
+				
+			case "BRAND":
+				setSpecHeaderEditArea(apiSpecData.BRAND_HEADER_SPEC);
+				setSpecRequestEditArea(apiMethodType, apiSpecData.BRAND_REQ_SPEC, apiSpecData.BRAND_REQ_JSON);
+				setSpecResponseEditArea(apiSpecData.BRAND_REP_SPEC, apiSpecData.BRAND_REP_JSON);
+				
+				break;
+				
+			case "STORE":				
+				setSpecHeaderEditArea(apiSpecData.STORE_HEADER_SPEC);
+				setSpecRequestEditArea(apiMethodType, apiSpecData.STORE_REQ_SPEC, apiSpecData.STORE_REQ_JSON);
+				setSpecResponseEditArea(apiSpecData.STORE_REP_SPEC, apiSpecData.STORE_REP_JSON);
+				
+				break;
+		}
+	}
+	 
+	 
+	function setContentSpecDataArea(apiKey, apiMethodType, apiType, apiSpecData) {
+		switch(apiType) {
+			case "NONE":
+				setSpecHeaderDataArea(apiSpecData.NONE_HEADER_SPEC);
+				setSpecRequestDataArea(apiMethodType, apiSpecData.NONE_REQ_SPEC, apiSpecData.NONE_REQ_JSON);
+				setSpecResponseDataArea(apiSpecData.NONE_REP_SPEC, apiSpecData.NONE_REP_JSON);
+				setSpecJsonRemoveAttr();				
+				
+				break;
+				
+			case "BRAND":
+				setSpecHeaderDataArea(apiSpecData.BRAND_HEADER_SPEC);
+				setSpecRequestDataArea(apiMethodType, apiSpecData.BRAND_REQ_SPEC, apiSpecData.BRAND_REQ_JSON);
+				setSpecResponseDataArea(apiSpecData.BRAND_REP_SPEC, apiSpecData.BRAND_REP_JSON);
+				setSpecJsonRemoveAttr();
+				
+				break;
+				
+			case "STORE":				
+				setSpecHeaderDataArea(apiSpecData.STORE_HEADER_SPEC);
+				setSpecRequestDataArea(apiMethodType, apiSpecData.STORE_REQ_SPEC, apiSpecData.STORE_REQ_JSON);
+				setSpecResponseDataArea(apiSpecData.STORE_REP_SPEC, apiSpecData.STORE_REP_JSON);
+				setSpecJsonRemoveAttr();
+				
+				break;
+		}
+	}
+	
+	
+	function setContentEtcEditArea(apiName, etcData) {
+		$("#tbl_etc_area > table").html('');
+		$("#tbl_etc_area").css("margin-top", "50px");
+		
+		switch(apiName) {
+			case "FAQ":
+				setEtcFaqEditArea(etcData);
+				break;
+				
+			default: 
+				setEtcErrEditArea(etcData);
+		}
+	}
+	
+	
+	function setContentEtcDataArea(apiName, etcData) {
+		$("#tbl_etc_area > table").html('');
+		
+		switch(apiName) {
+			case "FAQ":
+				setEtcFaqDataArea(etcData);
+				break;
+				
+			default: 
+				setEtcErrDataArea(etcData);
+		}
+	}
+	
+	
+	function setSpecHeaderEditArea(headerSpec) {
+		var specData = JSON.parse(( headerSpec == null || headerSpec == "" ? "[]" : headerSpec ));
+		
+		$("#tbl_header_area > table").html('');
+		$("#tbl_header_area > table").append(
+			"<colgroup><col style='width:5%;'><col style='width:25%;'><col style='width:40%;'><col style='width:25%;'><col style='width:5%;'></colgroup>" +
+			"<thead><tr><th></th><th>Field</th><th>Value</th><th>Description</th><th></th></tr></thead><tbody></tbody>"
+		);
+		
+		$.each(specData, function(index, item) {
+			$("#tbl_header_area > table > tbody").append( getSpecHeaderEditRowStr(item.name, item.value, item.description) );					
+		});
+		
+		$("#tbl_header_area > table > tbody").sortable();
+	}
+	
+	
+	function setSpecHeaderDataArea(headerSpec) {
+		var specData = JSON.parse(headerSpec);
+		
+		$("#tbl_header_area > table").html('');
+		$("#tbl_header_area > table").append(
+			"<colgroup><col style='width:25%;'><col style='width:25%;'><col style='width:50%;'></colgroup>" +
+			"<thead><tr><th>Field</th><th>Value</th><th>Description</th></tr></thead><tbody></tbody>"
+		);
+		
+		if(specData.length > 0) {
+			$.each(specData, function(index, item) {
+				$("#tbl_header_area > table > tbody").append(
+					"<tr><td style='line-height:130%'>" + item.name + "</td><td style='line-height:130%'>" + item.value + "</td>" + 
+					"<td style='line-height:130%'>" + item.description + "</td></tr>"
+				);
+			});
+		} else {
+			$("#tbl_header_area > table > tbody").append("<tr><td colspan='3' style='line-height:130%;'>None</td></tr>");
+		}
+	}
+	
+	
+	function setSpecRequestEditArea(apiMethodType, requestSpec, requestJson) {
+		var specData =  JSON.parse(( requestSpec == null || requestSpec == "" ? "[]" : requestSpec ));
+		var jsonData = ( requestJson == null || requestJson == "" ? "" : 
+						(apiMethodType == "GET" ? requestJson : JSON.stringify(JSON.parse(requestJson), null, 4)) ); 	
+		
+		$("#tbl_request_area > table").html('');
+		$("#tbl_request_area > table").append(
+			"<colgroup><col style='width:5%;'><col style='width:25%;'><col style='width:15%;'><col style='width:15%;'><col style='width:35%;'>" + 
+			"<col style='width:10%;'><col style='width:5%;'></colgroup><thead><tr><th></th><th>Field</th><th>Type</th><th>Size</th><th>Description</th>" + 
+			"<th>Optional</th><th></th></tr></thead><tbody></tbody>"
+		);
+		
+		$.each(specData, function(index, item) {
+			$("#tbl_request_area > table > tbody").append( getSpecRequestEditRowStr(item.name, item.type, item.size, item.description, item.optional) );					
+		});
+		
+		$("#tbl_request_area > table > tbody").sortable();
+		
+		$("#txt_request_area").val(jsonData);
+	}
+	
+	
+	function setSpecRequestDataArea(apiMethodType, requestSpec, requestJson) {
+		var specData =  JSON.parse(( requestSpec == null || requestSpec == "" ? "[]" : requestSpec ));
+		var jsonData = requestJson; 	
+		
+		$("#tbl_request_area > table").html('');
+		$("#tbl_request_area > table").append(
+				"<colgroup><col style='width:20%;'><col style='width:10%;'><col style='width:15%;'><col style='width:15%;'><col style='width:40%;'>" + 
+				"</colgroup><thead><tr><th>Field</th><th></th><th>Type</th><th>Size</th><th>Description</th></tr></thead><tbody></tbody>"
+		);
+		
+		if(specData.length > 0) {
+			var tabSize = 0;
+			$.each(specData, function(index, item) {
+				if(item.type.split("UP").length > 1) {
+					tabSize = tabSize - ((item.type.split("UP").length -1) * ARR_TAB_SIZE);
+				} 
+				
+				$("#tbl_request_area > table > tbody").append(
+					"<tr><td style='line-height:130%; " + (tabSize > 0 ? "padding-left:" + tabSize + "px;'" : "'")  + ">" + item.name + 
+					"</td><td style='line-height:130%'>" + (item.optional == "Y" ? "<span class='span_field_optional'>Optional</span>" : "" ) + "</td>" +
+					"<td style='line-height:130%'>" + item.type.replace(/UP/gi, "") + "</td><td style='line-height:130%'>" + item.size + "</td><td style='line-height:130%'>" + 
+					item.description + "</td></tr>"
+				);
+				
+				if(item.type.toUpperCase().indexOf("ARRAY") > -1) {
+					tabSize = tabSize + ARR_TAB_SIZE;
+				}
+			});
+		} else {
+			$("#tbl_request_area > table > tbody").append("<tr><td colspan='5' style='line-height:130%;'>None</td></tr>");
+		}
+		
+		$("#pre_request_area").attr("class", ("pre_req_" + apiMethodType.toLowerCase()));
+		switch(apiMethodType) {
+			case "GET":
+				if(requestJson != null) {
+					var reqParamNames = jsonData.split("&");
+					$("#pre_request_area").html(getSpecRequestJsonText(reqParamNames));
+					$("#pre_request_area").show();
+				} else {
+					$("#pre_request_area").hide();
+				}
+				break;				
+				
+			default: 
+				new JsonEditor("#pre_request_area", JSON.parse(jsonData));	
+				$("#pre_request_area").show();
+		}
+	}
+	
+	
+	function setSpecResponseEditArea(responseSpec, responseJson) {
+		var specData = JSON.parse(( responseSpec == null || responseSpec == "" ? "[]" : responseSpec ));
+		var jsonData = ( responseJson == null || responseJson == "" ? "" : JSON.stringify(JSON.parse(responseJson), null, 4) );
+		
+		$("#tbl_response_area > table").html('');
+		$("#tbl_response_area > table").append(
+			"<colgroup><col style='width:5%;'><col style='width:25%;'><col style='width:15%;'><col style='width:15%;'><col style='width:45%;'>" + 
+			"<col style='width:5%;'></colgroup><thead><tr><th></th><th>Field</th><th>Type</th><th>Size</th><th>Description</th><th></th></tr></thead><tbody></tbody>"
+		);
+		
+		$.each(specData, function(index, item) {
+			$("#tbl_response_area > table > tbody").append( getSpecResponseEditRowStr(item.name, item.type, item.size, item.description) );					
+		});
+		
+		$("#tbl_response_area > table > tbody").sortable();
+		
+		$("#txt_response_area").val(jsonData);
+	}
+	
+	
+	function setSpecResponseDataArea(responseSpec, responseJson) {
+		var specData = JSON.parse(responseSpec);
+		var jsonData = JSON.parse(responseJson); 	
+		
+		$("#tbl_response_area > table").html('');
+		$("#tbl_response_area > table").append(
+			"<colgroup><col style='width:35%;'><col style='width:15%;'><col style='width:15%;'><col style='width:35%;'></colgroup>" +
+			"<thead><tr><th>Field</th><th>Type</th><th>Size</th><th>Description</th></tr></thead><tbody></tbody>"
+		);
+		
+		if(specData.length > 0) {
+			var tabSize = 0;
+			$.each(specData, function(index, item) {
+				if(item.type.split("UP").length > 1) {
+					tabSize = tabSize - ((item.type.split("UP").length -1) * ARR_TAB_SIZE);
+				} 
+				
+				$("#tbl_response_area > table > tbody").append(
+					"<tr><td style='line-height:130%; " + (tabSize > 0 ? "padding-left:" + tabSize + "px;'" : "'")  + ">" + item.name + "</td>" + 
+					"<td style='line-height:130%'>" + item.type.replace(/UP/gi, "") + "</td><td style='line-height:130%'>" + item.size + "</td><td style='line-height:130%'>" + 
+					item.description + "</td></tr>"
+				);
+				
+				if(item.type.toUpperCase().indexOf("ARRAY") > -1) {
+					tabSize = tabSize + ARR_TAB_SIZE;
+				}
+			});
+		} else {
+			$("#tbl_response_area > table > tbody").append("<tr><td colspan='4' style='line-height:130%;'>None</td></tr>");
+		}
+		
+		if(responseJson != null) {
+			new JsonEditor("#pre_response_area", jsonData);	
+			$("#pre_response_area").show();
+			
+		} else {
+			$("#pre_response_area").hide();
+		}
+	}
+	
+	
+	function setSpecJsonRemoveAttr() {
+		var preSetData = $("pre").find("a");
+		$.each(preSetData, function(index, data) {
+			$(data).removeAttr("href");
+			$(data).removeAttr("class");
+		});
+		
+		$("pre").attr("contenteditable", false);
+	}
+	
+	
+	function setEtcErrEditArea(etcData) {
+		var specData = JSON.parse(( etcData == null || etcData == "" ? "[]" : etcData ));
+		
+		$("#tbl_etc_area > table").append(
+			"<colgroup><col style='width:5%;'><col style='width:15%;'><col style='width:35%;'><col style='width:45%;'><col style='width:5%;'></colgroup>" +
+			"<thead><tr><th></th><th>Code</th><th>Name</th><th>Message</th><th></th></tr></thead><tbody></tbody>"
+		);
+		
+		$.each(specData, function(index, item) {
+			$("#tbl_etc_area > table > tbody").append( getEtcErrEditRowStr(item.CODE, item.NAME, item.MSG) );					
+		});
+		
+		$("#tbl_etc_area > table > tbody").sortable();
+	}
+	
+	
+	function setEtcErrDataArea(etcData) {
+		var specData = JSON.parse(etcData);
+		
+		$("#tbl_etc_area > table").append(
+			"<colgroup><col style='width:15%;'><col style='width:35%;'><col style='width:50%;'></colgroup>" +
+			"<thead><tr><th>Code</th><th>Name</th><th>Message</th></tr></thead><tbody></tbody>"
+		);
+			
+		$.each(specData, function(index, item) {
+			$("#tbl_etc_area > table").append(
+				"<tr><td style='line-height:130%;'>" + item.CODE + "</td><td style='line-height:130%'>" + item.NAME + "</td>" +
+				"<td style='line-height:130%'>" + item.MSG + "</td></tr>"
+			);
+		});
+	}
+	
+	
+	function setEtcFaqEditArea(etcData) {
+		var specData = JSON.parse(( etcData == null || etcData == "" ? "[]" : etcData ));
+		
+		$("#tbl_etc_area > table").append(
+			"<colgroup><col style='width:5%;'><col style='width:45%;'><col style='width:45%;'><col style='width:5%;'></colgroup>" +
+			"<thead><tr><th></th><th>Question</th><th>Answer</th><th></th></tr></thead><tbody></tbody>"
+		);
+		
+		$.each(specData, function(index, item) {
+			$("#tbl_etc_area > table > tbody").append( getEtcFaqEditRowStr(item.Q, item.A) );					
+		});
+		
+		$("#tbl_etc_area > table > tbody").sortable();
+	}
+	
+	
+	function setEtcFaqDataArea(etcData) {
+		var specData = JSON.parse(etcData);
+		
+		$("#tbl_etc_area > table").append(
+			"<colgroup><col style='width:850px;'><col style=''></colgroup>"
+		);
+			
+		$.each(specData, function(index, item) {
+			$("#tbl_etc_area > table").append(
+				"<tr id='tr_qna_" + (index) + "' class='qna_area' style='cursor: pointer;'>" + "<td class='qna_title'>Q. " + item.Q + "</td>" + 
+				"<td class='qna_toggle' rowspan='2'><img width='25px' height='15px' src='/images/arrow_off.png'/></td></tr>" + 
+				"<tr><td id='td_ans_" + (index) + "' class='qna_ans'>" + item.A + "</td></tr>"
+			);
+		});		
+	}
+	
+	
+	function setNavMenuEditData() {
+		var navEditData = $(".left_menu .tbl-list > table > tbody > tr");
+		var apiSvcInfo	= new Array();
+		
+		for(var idx=0; idx<navEditData.length; idx++) {
+			var obj = {};
+			obj.SVC_TYPE 	= navEditData.eq(idx).find('select').val();
+			obj.API_NO 		= navEditData.eq(idx).find('input[type="text"]').attr('apino');
+			obj.API_NAME 	= navEditData.eq(idx).find('input[type="text"]').val();
+			obj.ORD_NO 		= idx + 1;
+			apiSvcInfo.push(obj);
+		}
+		
+		$.ajax({
+			url: "/setApiSvcInfoData",
+			type: "POST",
+			dataType: "json",
+			contentType: "application/json",
+		  	data: JSON.stringify( { 
+		  			SVC_CTGR: 		SVC_CTGR, 
+		  			API_SVC_INFO: 	apiSvcInfo
+				} 
+		  	),
+			async: false,
+			success : function(data) {
+				if(data.code == "0000") {
+					alert("API 서비스 정보 저장 완료하였습니다.");
+					initIndexPage(true);
+				} else {
+					alert("API 서비스 정보 저장에 실패하였습니다.\n[" + data.message + "]");
+				}
+			},
+   			error : function(request, status, err) {
+   				alert("API 서비스 정보 저장에 실패하였습니다.\n[서버 에러 : console창 확인]");
+   				console.log(request);
+   				console.log(status);
+   				console.log(err);
+       		} 
+		});
+	}
+	
+	
+	function setApiSvcDtlInfoData(procFlag) {
+		var apiSvcData 		= getApiData(NAV_MENU_API_KEY);
+		var headerData 		= getHeaderSpecFormatData($("#tbl_header_area > table > tbody > tr")); 
+		var requestData 	= getRequestSpecFormatData($("#tbl_request_area > table > tbody > tr"));
+		var responseData	= getResponseSpecFormatData($("#tbl_response_area > table > tbody > tr"));
+		var etcData			= getEtcSpecFormatData($("#tbl_etc_area > table > tbody > tr"));
+		
+		var methodType		= null;
+		var apiUrl			= null;
+		var apiType			= null;
+		var headerSpec		= null;
+		var reqSpec			= null;
+		var reqJson			= null;
+		var repSpec			= null;
+		var repJson			= null;
+		
+		switch(apiSvcData.SVC_TYPE) {
+			case "ETC":
+				methodType	= null;
+				apiUrl		= null;
+				apiType		= "NONE";
+				headerSpec	= null;
+				reqSpec		= null;
+				reqJson		= null;
+				repSpec 	= ( etcData.length > 0 ? JSON.stringify(etcData, null, 4) : null );
+				repJson		= null;		
+				break;
+				
+			default:
+				methodType	= $("#sel_api_method").val();
+				apiUrl		= $("#ipt_api_url").val();
+				apiType		= $("#div_api_typeEdit > ul > .on").attr("tabtype");
+				headerSpec	= ( headerData.length > 0 ? JSON.stringify(headerData, null, 4) : null );
+				reqSpec		= ( requestData.length > 0 ? JSON.stringify(requestData, null, 4) : null );
+				reqJson		= ( $("#txt_request_area").val() == "" ? null : $("#txt_request_area").val() );
+				repSpec 	= ( responseData.length > 0 ? JSON.stringify(responseData, null, 4) : null );
+				repJson		= ( $("#txt_response_area").val() == "" ? null : $("#txt_response_area").val() );			
+		}
+		
+		$.ajax({
+			url: "/setApiSvcDtlInfoData",
+			type: "POST",
+			dataType: "json",
+			contentType: "application/json",
+		  	data: JSON.stringify( {
+		  			PROC_TYPE:		( procFlag ? "N" : "D" ),
+					SVC_CTGR: 		SVC_CTGR,
+		  			SVC_TYPE: 		apiSvcData.SVC_TYPE,
+					API_NO: 		apiSvcData.API_NO,
+					METHOD_TYPE:	methodType,
+					API_URL:		apiUrl,
+					API_TYPE: 		apiType,
+					HEADER_SPEC:	headerSpec, 
+					REQ_SPEC: 		reqSpec, 
+					REQ_JSON: 		reqJson,
+					REP_SPEC: 		repSpec, 
+					REP_JSON: 		repJson
+				}
+ 			),
+			async: false,
+			success: function(data) {
+				if(data.code == "0000") {
+					alert("API 서비스 상세정보 저장 완료하였습니다.");
+				} else {
+					alert("API 서비스 상세정보 저장에 실패하였습니다.\n[" + data.message + "]");
+				}
+			},
+   			error: function(request, status, err) {
+   				alert("API 서비스 상세정보 저장에 실패하였습니다.\n[서버 에러 : console창 확인]");
+      			console.log(request);
+       			console.log(status);
+     			console.log(err);  
+			} 
+		});
+	}
+
+	
+	
+	/*******************************************************************************************************************************
+	 ** Event
+	 ******************************************************************************************************************************/
+	$(document).ready(function() {
+		
+		// Index Page Init
+		initIndexPage(true);
+
+		
+		// Window Scroll Event	
+		$(window).resize(function() {
+			$(window).scroll();
+		});
+				
+		$(window).scroll(function() {
+			$("#myBtn").css("position", "absolute");
+			$("#myBtn").css("left", 	( $(".wrapper").offset().left + 80 ) + "px");
+			
+			var checkValue = $(window).scrollTop() - $(".left_menu").css("height").replace("px", "");
+			if (checkValue > 0) {
+				var height = ($(window).scrollTop() + $(window).height()) - 100; 
+				$("#myBtn").stop().animate({
+					"top" : height + "px"
+				}, 300);
+				
+				$("#myBtn").css("display", 	"block");
+			} else {
+				$("#myBtn").css("top", 		"0px");
+				$("#myBtn").css("display", 	"none");
+			}
+		}).scroll();
+				
+		$("#myBtn").click(function () {
+			document.body.scrollTop = 0;
+	   		document.documentElement.scrollTop = 0;
+		});
+		
+		
+		// Service Category Link Event
+		$(document).on("click", ".link > ul > li > a", function() {
+			if(EDIT_MODE == "N") {
+				SVC_CTGR = $(this).text();
+				initIndexPage(false);
+			}
+		});
+		
+		
+		// Nav Api Service Event
+		$(document).on("click", ".depth2 > a", function() {
+			var apiKey = ($(this).attr("class").indexOf("left") == 0 ? $(this).attr("id") : $(this).next("a").attr("id"));
+			var apiSvcData = getApiData(apiKey); 
+			
+			$(".depth2 .left-padding").removeClass("on");
+			$("#" + apiKey).addClass("on");
+			initContentDataArea(apiSvcData);
+		});
+		
+		
+		// Content Api Type Event
+		$(document).on("click", "#div_api_typeInfo > ul > li", function() {
+			var apiKey = $(".depth2 .on").attr("id");
+			var apiMethodType =  $(".depth2 .on").prev("a").text();
+			var apiType = $(this).attr("tabType");
+			var apiSpecData = getApiDtlData(apiKey);
+			
+			if(apiType == "BRAND") {
+				$("#div_api_typeInfo > ul .left").attr("class", "left on");
+				$("#div_api_typeInfo > ul .right").attr("class", "right off");
+			} else {
+				$("#div_api_typeInfo > ul .left").attr("class", "left off");
+				$("#div_api_typeInfo > ul .right").attr("class", "right on");
+			}
+			
+			setContentSpecDataArea(apiKey, apiMethodType, apiType, apiSpecData); 
+		});
+		
+		
+		// Content Etc Event
+		$(document).on("click", ".qna_area", function() {
+			var index 	= $(this).attr("id").replace(/tr_qna_/gi, "");
+			var onFlag 	= ( $(this).find("img").attr("class") == "on" ? true : false );
+			
+			switch(onFlag) {
+				case true:
+					$(this).find("img").attr("class",	"off");
+					$(this).find("img").attr("src", 	"/images/arrow_off.png");
+					$("#td_ans_" + index).hide();
+					
+					break;				
+					
+				default: 
+					$(this).find("img").attr("class",	"on");
+					$(this).find("img").attr("src", 	"/images/arrow_on.png");
+					$("#td_ans_" + index).show();
+			}
+		});
+		
+		
+		// Nav Api Service Edit Event
+		$("#btn_nav_add").click(function() {
+			$(".left_menu .tbl-list > table > tbody").html(
+				getNavMenuEditRowStr(NAV_MENU_INDEX, "", "NEW", "NEW") + $(".left_menu .tbl-list > table > tbody").html()
+			);
+			
+			NAV_MENU_INDEX++;
+		});
+		
+		$("#btn_nav_save").click(function() {
+			if(checkNavMenuEditData()) {
+				setNavMenuEditData();
+			}
+		});
+		
+		$(".btn_del_list").live("click", function() {
+			$(this).parent().parent().remove();
+		});
+		
+		$(".left_menu .ui-sortable > tr").live("click", function() {
+			var apiSvcData = getApiData(SVC_CTGR + $(this).find("select").val() + $(this).find("input").attr("apino"));
+			
+			$(".ui-sortable > tr").removeClass("on");
+			$(this).addClass("on");
+			initContentEditArea(apiSvcData);
+			
+			$("#myBtn").click();
+		});
+		
+		
+		// Content Api Service Edit Event
+		$("#btn_con_save").click(function() {
+			setApiSvcDtlInfoData(true);
+		});
+		
+		$("#btn_etc_save").click(function() {
+			setApiSvcDtlInfoData(true);
+		});
+		
+		$("#btn_con_del").click(function() {
+			setApiSvcDtlInfoData(false);	
+		});
+		
+		$(document).on("click", "#div_api_typeEdit > ul > li", function() {
+			var apiType = $(this).attr("tabType");
+			var apiSpecData = getApiDtlData(NAV_MENU_API_KEY);
+			
+			$("#div_api_typeEdit > ul > li").removeClass("on off");
+			$("#div_api_typeEdit > ul > li").addClass("off");
+			
+			$(this).removeClass("off");
+			$(this).addClass("on");
+			
+			setContentSpecEditArea(NAV_MENU_API_KEY, NAV_MENU_METHOD_TYPE, apiType, apiSpecData); 
+		});
+		
+		$("#btn_hedder_add").click(function() {
+			$("#tbl_header_area > table > tbody").html( getSpecHeaderEditRowStr("NEW", "NEW", "NEW") + $("#tbl_header_area > table > tbody").html() );
+		});
+		
+		$("#btn_request_add").click(function() {
+			$("#tbl_request_area > table > tbody").html( getSpecRequestEditRowStr("NEW", "NEW", "", "NEW", "N") + $("#tbl_request_area > table > tbody").html() );
+		});
+		
+		$("#btn_response_add").click(function() {
+			$("#tbl_response_area > table > tbody").html( getSpecResponseEditRowStr("NEW", "NEW", "", "NEW") + $("#tbl_response_area > table > tbody").html() );
+		});
+		
+		$("#btn_etc_add").click(function() {
+			var apiSvcData = getApiData(NAV_MENU_API_KEY);
+			switch(apiSvcData.API_NAME) {
+				case "FAQ":
+					$("#tbl_etc_area > table > tbody").html( getEtcFaqEditRowStr("NEW", "NEW") + $("#tbl_etc_area > table > tbody").html() );
+					break;
+					
+				default:
+					$("#tbl_etc_area > table > tbody").html( getEtcErrEditRowStr("NEW", "NEW", "NEW") + $("#tbl_etc_area > table > tbody").html() );
+			}
+		});
+		
+	});
+
+</script>
+</head>
+
+<body>
+<div class="wrapper">
+	
+	<!-- =============================================================================================================================== -->
+	<!-- Top Area -->
+	<!-- =============================================================================================================================== -->
+	<div class="top_renew"> 
+		<div class="top_inner">
+			<div class="logo">
+				<img src="./08-세트대체상품조회_files/smartro_logo.png">
+			</div>
+			<div class="link">
+				<ul>
+					<li style="padding: 75px;"><a id="svc_ctgr_pos" class="sel">POS</a></li>
+					<li style="padding: 75px;"><a id="svc_ctgr_van">VAN</a></li>
+					<li style="padding: 75px;"><a id="svc_ctgr_o2o">O2O</a></li>
+					<li style="padding: 75px;"><a id="svc_ctgr_pg">PG</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+
+	<div class="middle_renew">
+	<!-- =============================================================================================================================== -->
+	<!-- Left Nav Area -->
+	<!-- =============================================================================================================================== -->
+		<div class="lnb">
+			<div id="div_nav_btn" style="width:350px; height:18px; padding-top:15px; text-align:right; display:none;">
+				<span id="btn_nav_add" class="edit_btn" title="추가">				
+					<img id="span_nav_add_icon" class="edit_btn_icon" src="./08-세트대체상품조회_files/icon_plus_type3.png" width="20px" height="20px"> 	
+					<span id="span_nav_add_text" class="edit_btn_text">추가</span>
+				</span> 			
+				<span id="btn_nav_save" class="edit_btn" title="저장">
+					<img id="span_nav_save_icon" class="edit_btn_icon" src="./08-세트대체상품조회_files/icon_check_type3.png" width="20px" height="20px"> 	
+					<span id="span_nav_save_text" class="edit_btn_text">저장</span>
+				</span>
+			</div>		
+		
+			<div id="lnb_nav" class="left_menu">
+				<ul id="type"><li class="depth1"><a>공통</a></li><li class="depth2"><a class="get">GET</a><a id="POSCOMMAPI-0016" class="left-padding">서버연결 상태체크</a></li><li class="depth2"><a class="get">GET</a><a id="POSCOMMAPI-0017" class="left-padding">공통코드정보조회</a></li><li class="depth1"><a>가맹점</a></li><li class="depth2"><a class="get">GET</a><a id="POSCUSTAPI-0018" class="left-padding">가맹점정보조회</a></li><li class="depth1"><a>메뉴분류 및 상품</a></li><li class="depth2"><a class="get">GET</a><a id="POSITEMAPI-0019" class="left-padding">메뉴상품요약조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSITEMAPI-0020" class="left-padding">메뉴분류조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSITEMAPI-0021" class="left-padding">메뉴상품조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSITEMAPI-0022" class="left-padding">세트상품조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSITEMAPI-0023" class="left-padding on">세트대체상품조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSITEMAPI-0024" class="left-padding">첨가물조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSITEMAPI-0025" class="left-padding">첨가물규칙조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSITEMAPI-0026" class="left-padding">첨가물규칙상세조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSITEMAPI-0027" class="left-padding">상품첨가물규칙조회</a></li><li class="depth1"><a>매출</a></li><li class="depth2"><a class="get">GET</a><a id="POSSALEAPI-0030" class="left-padding">월매출 집계정보조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSSALEAPI-0031" class="left-padding">일매출 집계정보조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSSALEAPI-0032" class="left-padding">주문 매출정보조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSSALEAPI-0033" class="left-padding">주문상세 매출정보조회</a></li><li class="depth2"><a class="get">GET</a><a id="POSSALEAPI-0055" class="left-padding">주문상세매출첨가물정보조회</a></li><li class="depth2"><a class="post">POST</a><a id="POSSALEAPI-0034" class="left-padding">개점, 마감 정보등록</a></li><li class="depth2"><a class="post">POST</a><a id="POSSALEAPI-0035" class="left-padding">주문매출내역등록</a></li><li class="depth2"><a class="post">POST</a><a id="POSSALEAPI-0036" class="left-padding">주문상세매출내역등록</a></li><li class="depth2"><a class="post">POST</a><a id="POSSALEAPI-0037" class="left-padding">주문상세매출첨가물내역등록</a></li><li class="depth2"><a class="post">POST</a><a id="POSSALEAPI-0038" class="left-padding">주문결제내역등록</a></li><li class="depth2"><a class="post">POST</a><a id="POSSALEAPI-0039" class="left-padding">주문결제상세내역등록</a></li></ul>
+			</div>
+		
+			<button id="myBtn" title="상단 이동" style="position: absolute; left: 505px; top: 0px; display: none;">▲ TOP</button>
+		</div>
+	
+	
+	<!-- =============================================================================================================================== -->
+	<!-- Content Area -->
+	<!-- =============================================================================================================================== -->	
+		<div class="content">
+		
+			<!-- Content 1. API Serivce Spec Area ====================================================================================== -->
+			<div id="div_api_content" class="content_box" style="display: block;">
+			
+				<!-- Content - API Service Name ==================================================================================== -->
+				<h3 id="head_api_name" class="stit">세트대체상품조회</h3>
+				
+				
+				<!-- Content - API Base Edit & Info ================================================================================ -->
+				<span id="btn_con_save" class="edit_btn" title="저장" style="display: none; float: right;">
+					<img id="span_con_save_icon" class="edit_btn_icon" src="./08-세트대체상품조회_files/icon_check_type3.png" width="20px" height="20px"> 	
+					<span id="span_con_save_text" class="edit_btn_text">저장</span>
+				</span>				
+				
+				<span id="btn_con_del" class="edit_btn" title="삭제" style="display: none; float: right;">
+					<img id="span_con_del_icon" class="edit_btn_icon" src="./08-세트대체상품조회_files/icon_check_type3.png" width="20px" height="20px"> 	
+					<span id="span_con_del_text" class="edit_btn_text">삭제</span>
+				</span>								
+				
+				<div id="div_api_baseEdit" class="api_base_info" style="display: none; margin-top: 50px; height: 45px;">
+					<ul>
+						<li class="left">
+							<select id="sel_api_method">
+								<option value="GET">GET</option>
+								<option value="POST">POST</option>
+							</select>
+						</li>
+						<li class="right">
+							<input id="ipt_api_url" type="text">
+						</li>
+					</ul>
+				</div>
+				
+				<div id="div_api_baseInfo" class="api_base_info" style="">
+					<span id="sp_api_method" class="span_method_get">GET</span>
+					<span id="sp_api_url" class="span_url">https://t-exttran.smilebiz.co.kr/V1/item/getChgSetItemListInfo</span>
+				</div>
+				
+								
+				<!-- Content - API Type Edit & Info ================================================================================ -->
+				<div id="div_api_typeEdit" class="div_api_type" style="display: none;">
+					<ul>
+						<li class="left_edit on" tabtype="NONE">공통</li>
+						<li class="center_edit off" tabtype="BRAND">브랜드/그룹</li>
+						<li class="right_edit off" tabtype="STORE">가맹점</li>
+					</ul>
+				</div>
+				
+				<div id="div_api_typeInfo" class="div_api_type" style="display: block;">
+					<ul>
+						<li class="left on" tabtype="BRAND">브랜드/그룹</li>
+						<li class="right off" tabtype="STORE">가맹점</li>
+					</ul>
+				</div>
+				
+				
+				<!-- Content - API Header Edit & Info ============================================================================== -->
+				<ul class="ul_title">
+					<li class="left">
+						<h1>Header</h1>
+					</li>
+					<li class="right">
+						<span id="btn_hedder_add" class="edit_btn" title="추가" style="display: none; float: right;">
+							<img id="span_hedder_add_icon" class="edit_btn_icon" src="./08-세트대체상품조회_files/icon_plus_type3.png" width="20px" height="20px"> 	
+							<span id="span_hedder_add_text" class="edit_btn_text">추가</span>
+						</span>		
+					</li>
+				</ul>
+				
+				<div id="tbl_header_area" class="tbl-list">
+					<table><colgroup><col style="width:25%;"><col style="width:25%;"><col style="width:50%;"></colgroup><thead><tr><th>Field</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td style="line-height:130%">Accept</td><td style="line-height:130%">application/json</td><td style="line-height:130%">미디어 타입</td></tr><tr><td style="line-height:130%">Authorization</td><td style="line-height:130%">Bearer **********</td><td style="line-height:130%">인증키</td></tr></tbody></table>
+				</div>
+				
+				
+				<!-- Content - API Request Edit & Info ============================================================================= -->
+				<ul class="ul_title">
+					<li class="left">
+						<h1>Request</h1>
+					</li>
+					<li class="right">
+						<span id="btn_request_add" class="edit_btn" title="추가" style="display: none; float: right;">
+							<img id="span_request_add_icon" class="edit_btn_icon" src="./08-세트대체상품조회_files/icon_plus_type3.png" width="20px" height="20px"> 	
+							<span id="span_request_add_text" class="edit_btn_text">추가</span>
+						</span>		
+					</li>
+				</ul>				
+				
+				<div id="tbl_request_area" class="tbl-list">
+					<table><colgroup><col style="width:20%;"><col style="width:10%;"><col style="width:15%;"><col style="width:15%;"><col style="width:40%;"></colgroup><thead><tr><th>Field</th><th></th><th>Type</th><th>Size</th><th>Description</th></tr></thead><tbody><tr><td style="line-height:130%; ">STORE_CODE</td><td style="line-height:130%"><span class="span_field_optional">Optional</span></td><td style="line-height:130%">String</td><td style="line-height:130%">10</td><td style="line-height:130%">가맹점코드</td></tr><tr><td style="line-height:130%; ">SET_ITEM_CODE</td><td style="line-height:130%"><span class="span_field_optional">Optional</span></td><td style="line-height:130%">String</td><td style="line-height:130%">30</td><td style="line-height:130%">세트상품코드</td></tr><tr><td style="line-height:130%; ">ITEM_CODE</td><td style="line-height:130%"><span class="span_field_optional">Optional</span></td><td style="line-height:130%">String</td><td style="line-height:130%">30</td><td style="line-height:130%">세트하위상품코드</td></tr><tr><td style="line-height:130%; ">UP_DTIME</td><td style="line-height:130%"><span class="span_field_optional">Optional</span></td><td style="line-height:130%">String</td><td style="line-height:130%">20</td><td style="line-height:130%">수정일자<br>(YYYY-MM-DD hh:mm:ss)</td></tr><tr><td style="line-height:130%; ">PAGE_SIZE</td><td style="line-height:130%"><span class="span_field_optional">Optional</span></td><td style="line-height:130%">Number</td><td style="line-height:130%"></td><td style="line-height:130%">페이지사이즈</td></tr><tr><td style="line-height:130%; ">PAGE_NO</td><td style="line-height:130%"></td><td style="line-height:130%">Number</td><td style="line-height:130%"></td><td style="line-height:130%">페이지번호</td></tr></tbody></table>
+				</div>	
+				<pre id="pre_request_area" class="pre_req_get" style="display: block;" contenteditable="false"><span class="key">STORE_CODE</span>=<span class="value"></span>&amp;<span class="key">SET_ITEM_CODE</span>=<span class="value"></span>&amp;<span class="key">ITEM_CODE</span>=<span class="value"></span>&amp;<span class="key">UP_DTIME</span>=<span class="value">2024-02-01 00:00:00</span>&amp;<span class="key">PAGE_SIZE</span>=<span class="value">5</span>&amp;<span class="key">PAGE_NO</span>=<span class="value">1</span></pre>
+				<textarea id="txt_request_area" style="margin-top: 10px; display: none;"></textarea>
+				
+				
+				<!-- Content - API Response Edit & Info ============================================================================ -->
+				<ul class="ul_title">
+					<li class="left">
+						<h1>Response</h1>
+					</li>
+					<li class="right">
+						<span id="btn_response_add" class="edit_btn" title="추가" style="display: none; float: right;">
+							<img id="span_response_add_icon" class="edit_btn_icon" src="./08-세트대체상품조회_files/icon_plus_type3.png" width="20px" height="20px"> 	
+							<span id="span_response_add_text" class="edit_btn_text">추가</span>
+						</span>		
+					</li>
+				</ul>				
+				
+				<div id="tbl_response_area" class="tbl-list">
+					<table><colgroup><col style="width:35%;"><col style="width:15%;"><col style="width:15%;"><col style="width:35%;"></colgroup><thead><tr><th>Field</th><th>Type</th><th>Size</th><th>Description</th></tr></thead><tbody><tr><td style="line-height:130%; ">CODE</td><td style="line-height:130%">String</td><td style="line-height:130%">13</td><td style="line-height:130%">결과코드</td></tr><tr><td style="line-height:130%; ">MESSAGE</td><td style="line-height:130%">String</td><td style="line-height:130%">50</td><td style="line-height:130%">결과메시지</td></tr><tr><td style="line-height:130%; ">PAGE_TOTAL</td><td style="line-height:130%">Number</td><td style="line-height:130%"></td><td style="line-height:130%">전체 페이지 수</td></tr><tr><td style="line-height:130%; ">PAGE_SIZE</td><td style="line-height:130%">Number</td><td style="line-height:130%"></td><td style="line-height:130%">페이지사이즈</td></tr><tr><td style="line-height:130%; ">PAGE_NO</td><td style="line-height:130%">Number</td><td style="line-height:130%"></td><td style="line-height:130%">페이지번호</td></tr><tr><td style="line-height:130%; ">CHG_SET_ITEM_INFO</td><td style="line-height:130%">Array</td><td style="line-height:130%"></td><td style="line-height:130%">세트대체상품정보</td></tr><tr><td style="line-height:130%; padding-left:30px;">ROW_NUM</td><td style="line-height:130%">Number</td><td style="line-height:130%"></td><td style="line-height:130%">번호</td></tr><tr><td style="line-height:130%; padding-left:30px;">STORE_CODE</td><td style="line-height:130%">String</td><td style="line-height:130%">10</td><td style="line-height:130%">가맹점코드</td></tr><tr><td style="line-height:130%; padding-left:30px;">ID_CODE</td><td style="line-height:130%">String</td><td style="line-height:130%">30</td><td style="line-height:130%">상품코드 (대표상품)</td></tr><tr><td style="line-height:130%; padding-left:30px;">IDCODE_SET</td><td style="line-height:130%">String</td><td style="line-height:130%">30</td><td style="line-height:130%">상품코드 (메뉴상품)</td></tr><tr><td style="line-height:130%; padding-left:30px;">ID_CHGCODE</td><td style="line-height:130%">String</td><td style="line-height:130%">30</td><td style="line-height:130%">상품코드 (대체상품)</td></tr><tr><td style="line-height:130%; padding-left:30px;">CHG_AMT</td><td style="line-height:130%">Number</td><td style="line-height:130%"></td><td style="line-height:130%">추가금액</td></tr><tr><td style="line-height:130%; padding-left:30px;">ID_SORT</td><td style="line-height:130%">Number</td><td style="line-height:130%"></td><td style="line-height:130%">정렬순서</td></tr><tr><td style="line-height:130%; padding-left:30px;">ORDER_GROUP</td><td style="line-height:130%">String</td><td style="line-height:130%">100</td><td style="line-height:130%">메뉴그룹</td></tr><tr><td style="line-height:130%; padding-left:30px;">COURSE_NO</td><td style="line-height:130%">Number</td><td style="line-height:130%"></td><td style="line-height:130%">코스순서</td></tr><tr><td style="line-height:130%; padding-left:30px;">ID_MEMO</td><td style="line-height:130%">String</td><td style="line-height:130%">200</td><td style="line-height:130%">메모</td></tr><tr><td style="line-height:130%; padding-left:30px;">DATA_STAT</td><td style="line-height:130%">String</td><td style="line-height:130%">1</td><td style="line-height:130%">데이터상태<br>(공통코드 : DATA_STAT)</td></tr><tr><td style="line-height:130%; padding-left:30px;">UP_DTIME</td><td style="line-height:130%">String</td><td style="line-height:130%">20</td><td style="line-height:130%">수정일자<br>(YYYY-MM-DD hh:mm:ss)</td></tr></tbody></table>
+				</div>	
+				<pre id="pre_response_area" class="json-editor-blackbord" style="margin-top: 10px; padding: 10px;" contenteditable="false"><a></a>{<ul class="json-dict"><li><span class="json-string json-property">"MESSAGE"</span>: <span class="json-string">"완료되었습니다."</span>,</li><li><span class="json-string json-property">"CODE"</span>: <span class="json-string">"0000"</span>,</li><li><span class="json-string json-property">"PAGE_TOTAL"</span>: <span class="json-literal json-literal-number">7</span>,</li><li><a><span class="json-string json-property">"CHG_SET_ITEM_INFO"</span></a>: [<ol class="json-array"><li><a></a>{<ul class="json-dict"><li><span class="json-string json-property">"ID_SORT"</span>: <span class="json-literal json-literal-number">1</span>,</li><li><span class="json-string json-property">"ID_MEMO"</span>: <span class="json-literal json-literal-null">null</span>,</li><li><span class="json-string json-property">"COURSE_NO"</span>: <span class="json-literal json-literal-number">0</span>,</li><li><span class="json-string json-property">"STORE_CODE"</span>: <span class="json-string">"3900141"</span>,</li><li><span class="json-string json-property">"ROW_NUM"</span>: <span class="json-literal json-literal-number">1</span>,</li><li><span class="json-string json-property">"UP_DTIME"</span>: <span class="json-string">"2024-02-05 01:02:59"</span>,</li><li><span class="json-string json-property">"IDCODE_SET"</span>: <span class="json-string">"1013"</span>,</li><li><span class="json-string json-property">"CHG_AMT"</span>: <span class="json-literal json-literal-number">500</span>,</li><li><span class="json-string json-property">"ID_CODE"</span>: <span class="json-string">"1201"</span>,</li><li><span class="json-string json-property">"DATA_STAT"</span>: <span class="json-string">"N"</span>,</li><li><span class="json-string json-property">"ORDER_GROUP"</span>: <span class="json-literal json-literal-null">null</span>,</li><li><span class="json-string json-property">"ID_CHGCODE"</span>: <span class="json-string">"1014"</span></li></ul>},</li><li><a></a>{<ul class="json-dict"><li><span class="json-string json-property">"ID_SORT"</span>: <span class="json-literal json-literal-number">1</span>,</li><li><span class="json-string json-property">"ID_MEMO"</span>: <span class="json-literal json-literal-null">null</span>,</li><li><span class="json-string json-property">"COURSE_NO"</span>: <span class="json-literal json-literal-number">0</span>,</li><li><span class="json-string json-property">"STORE_CODE"</span>: <span class="json-string">"3900142"</span>,</li><li><span class="json-string json-property">"ROW_NUM"</span>: <span class="json-literal json-literal-number">2</span>,</li><li><span class="json-string json-property">"UP_DTIME"</span>: <span class="json-string">"2024-02-05 01:02:59"</span>,</li><li><span class="json-string json-property">"IDCODE_SET"</span>: <span class="json-string">"1013"</span>,</li><li><span class="json-string json-property">"CHG_AMT"</span>: <span class="json-literal json-literal-number">500</span>,</li><li><span class="json-string json-property">"ID_CODE"</span>: <span class="json-string">"1201"</span>,</li><li><span class="json-string json-property">"DATA_STAT"</span>: <span class="json-string">"N"</span>,</li><li><span class="json-string json-property">"ORDER_GROUP"</span>: <span class="json-literal json-literal-null">null</span>,</li><li><span class="json-string json-property">"ID_CHGCODE"</span>: <span class="json-string">"1014"</span></li></ul>}</li></ol>],</li><li><span class="json-string json-property">"PAGE_NO"</span>: <span class="json-literal json-literal-number">1</span>,</li><li><span class="json-string json-property">"PAGE_SIZE"</span>: <span class="json-literal json-literal-number">5</span></li></ul>}</pre>
+				<textarea id="txt_response_area" style="margin-top: 10px; display: none;"></textarea>
+			</div>
+			
+			
+			<!-- Content 2. O2O Service Intro Area ===================================================================================== -->
+			<div id="div_intr_content" class="content_box" style="display: none;">
+			
+				<!-- Content - O2O Intro Text ====================================================================================== -->
+				<div id="intro_area">
+					<div>
+						<h3 class="intro_title">1.오더 Agent 서비스 소개</h3>
+						<div class="intro_content">
+							<ol>
+								<li>본 서비스는 스마트로  Smile POS (리뉴얼 버전)의 상품 및 테이블을 기반으로 주문 연동이 가능합니다.</li>
+								<li>서버 to 서버 JSON API 형식으로 주문 요청 전에 가맹점 Smile POS 기초정보를 기준으로 연동됩니다.</li>
+								<li>서비스 연동을 위한 기본 가이드를 제공하며, 실 연동을 위해서는 별도 협의를 통해 진행되어야 합니다.</li>
+								<li>담당부서 : 스마트로 POS개발실 / 담당자 메일 : <span class="addr">PlatformDevDiv@smartro.co.kr</span></li>
+							</ol>
+						</div>
+						
+						<h3 class="intro_title">2.오더 Agent 서비스 연동 준비</h3>
+						<div class="intro_content">
+							<ol>
+								<li><span class="sub_title">사전준비</span>
+									<ul>
+										<li>1) 서비스 연동을 위한 API 필수 항목인 STORE_ID, SERVICE_ID는 별도 협의 후 제공합니다.</li>
+										<li>2) 주문 연동은 선불/후불 방식 모두 가능합니다.</li>
+										<li>3) 선불의 경우 파트너사 태블릿에 리더기와 결제앱(VCAT) 연동이 필요하오니 별도 협의를 통해 진행합니다.</li>
+									</ul>
+								</li><br>
+								<li><span class="sub_title">기초정보</span>
+									<ul>
+										<li>1) 가맹점 테이블, 상품정보 API 조회 후 파트너사측 저장 후 활용 (주기 갱신은 일 1회 권장)</li>
+										<li>2) 정보 변경 시 파트너사 태블릿 관리자 혹은 일반 태블릿 옵션 기능에 버튼 이벤트로 API 활용 바랍니다.</li>
+										<li>3) API 주문을 요청하기 위해서는 Agent 실행 및 POS 프로그램 영업 개시가 준비되어야 합니다.
+											<ul>
+												<li>- Agent 및 POS 프로그램에 환경 설정에 대해서는 별도 가이드가 필요합니다.</li>
+												<li>- Agent 및 POS 프로그램 문의는 메일(<span class="addr">BizupDiv@smartro.co.kr</span>)로 요청하시기 바랍니다.</li>
+											</ul>										
+										</li>
+									</ul>
+								</li>
+							</ol>
+						</div>
+						
+						<h3 class="intro_title">3.오더 Agent 서비스 연동 흐름</h3>
+						<div class="intro_content">
+							<ol>
+								<li><span class="sub_title">선불방식</span>
+									<ul>
+										<li>1) 스마트로 VCAT 선불 결제 후 "신규주문 등록" API 만으로 결제 정보를 포함하여 요청합니다.
+											<ul>
+												<li>① 태블릿에서 스마트로 VCAT 선불 결제 처리</li>
+												<li>② 신규주문등록 API 요청</li>	
+											</ul>
+										</li>
+										<li>2) 취소 및 반품 기능은 POS에서 제공하며, 상품별/금액별 분할 결제가 가능합니다.</li>
+										<li>3) 현금의 경우 점주 혹은 직원에게 수기 (태블릿 관리자 혹은 파트사별 상이)로 확인된 결제완료 후 주문 정보를 전송합니다.</li>
+									</ul>
+								</li><br>
+								<li><span class="sub_title">후불방식 요청 및 확인</span>
+									<ul>
+										<li>1) 후불 방식의 주문 흐름은 테이블 점유형 방식으로 주문조회 ▷ 신규 or 추가 주문 전송의 흐름입니다.
+											<ul>
+												<li>- 실시간 주문조회 API로 테이블 확인하여 점유된 주문이 없으면 ▷ 신규주문등록 API 요청</li>
+												<li>- 실시간 주문조회 API로 테이블 확인하여 점유된 주문이 있으면 ▷ 추가주문등록 API 요청</li>
+											</ul>
+										</li>
+										<li>2) POS 상태 및 통신 환경에 따라 성공 응답 지연이 발생할 수 있어 주문 등록 요청 후 실시간 조회 확인 필수
+											<ul>
+												<li>- 실시간 주문조회 API로 요청한 주문 결과 확인 (수행주기 5초 단위 권장)</li>
+												<li>- (1차 응답) 태블릿 ▷ 스마트로 서버 주문 전송 API 응답</li>
+												<li>- (2차 응답) 스마트로 서버 주문 ▷ POS 전달 성공 : 접수성공 결과 값은 실시간 주문조회로 확인</li>
+												<li>
+													<img class="" src="./08-세트대체상품조회_files/intro_service.png" width="850px" title="" style="margin:30px 0;">
+												</li>
+												<li>- 정상 : 1번 내용 참고, 실패 : 2번</li>
+												<li>- O2O서버 &lt;&gt; POS간 통신 상 이슈 사례 : 주문 접수시간 기준으로 60초가 지난 건에 대해서는 POS로 전송 제외</li>
+												<li>- 태블릿측 실시간 조회 시 60초 이후에는 실패 건은 조회에서 제외 ▷ 이후 신규 주문 처리 위함</li>										
+											</ul>
+										</li>
+									</ul>
+								</li><br>
+								<li><span class="sub_title">후불방식 점유 시 참고사항</span>
+									<ul>
+										<li>- POS 화면에서 테이블의 상태 혹은 결제가 진행되는 경우 테이블이 점유되어 API 주문이 불가합니다.
+											<ul>
+												<li>① 실시간 주문조회 확인</li>
+												<li>② 신규 or 추가주문 요청</li>
+												<li>③ 테이블 점유 알림 ▷ 잠시후 재요청</li>
+											</ul>
+										</li>
+									</ul>
+								</li><br>
+								<li><span class="sub_title">실시간 주문조회 참고사항</span>
+									<ul>
+										<li>1) 실시간 주문조회 API는 "주문성공", "주문취소"를 기준으로 조회를 제공합니다.</li>
+										<li>2) 태블릿 주문 요청 시 환경상 이슈로 주문대기 및 실패 건에 대해서는 60초 이전까지만 조회가 가능합니다.
+											<ul>
+												<li>- 태블릿 주문건은 60초 이후 조회 내역에서 제외됩니다. 이부분을 태블릿측에서 인지하여 주문 재요청을 진행바랍니다.</li>
+												<li>- 장비 및 통신상 이슈 발생 시 상호간 주문 안정성을 위한 처리 프로세스 정립 필요</li>
+												<li>- 장비 및 통신상 이슈가 아니라면 일반적으로 실패 응답을 제공하고 있습니다.</li>
+												<li><img class="" src="./08-세트대체상품조회_files/intro_table.png" width="850px" title="" style="margin:30px 0;"></li>
+											</ul>
+										</li>
+											
+									</ul>
+								</li>
+							</ol>
+						</div>
+					</div>
+				</div>		
+			</div>					
+			
+
+			<!-- Content 3. O2O Etc Text Area ========================================================================================== -->
+			<div id="div_etc_content" class="content_box" style="display: none;">
+				<h3 id="head_etc_name" class="stit"></h3>
+				
+				<span id="btn_etc_save" class="edit_btn" title="저장" style="display: none; float: right;">
+					<img id="span_etc_save_icon" class="edit_btn_icon" src="./08-세트대체상품조회_files/icon_check_type3.png" width="20px" height="20px"> 	
+					<span id="span_etc_save_text" class="edit_btn_text">저장</span>
+				</span>				
+				
+				<span id="btn_etc_add" class="edit_btn" title="추가" style="display: none; float: right;">
+					<img id="span_etc_add_icon" class="edit_btn_icon" src="./08-세트대체상품조회_files/icon_check_type3.png" width="20px" height="20px"> 	
+					<span id="span_etc_add_text" class="edit_btn_text">추가</span>
+				</span>		
+			
+				<div id="tbl_etc_area" class="tbl-list">
+					<table>
+						<thead></thead>
+						<tbody></tbody>
+					</table>
+				</div>		
+			</div>			
+			
+		</div>
+	</div>
+
+</div>
+
+</body></html>

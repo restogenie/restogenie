@@ -3,7 +3,7 @@ import { format, parse } from "date-fns";
 import iconv from "iconv-lite";
 
 export class SmartroSyncService {
-    private apiBaseUrl = "https://t-exttran.smilebiz.co.kr/V1/sales";
+    private apiBaseUrl = "https://exttran.smilebiz.co.kr/V1/sales";
     private storeId: number;
     private authKey: string;
     private compNo: string;
@@ -13,52 +13,47 @@ export class SmartroSyncService {
         this.storeId = storeId;
         this.authKey = authKey;
         this.compNo = compNo;
-        this.storeCode = storeCode;
+        this.storeCode = storeCode; // Used as STORE_ID in the new API format
     }
 
-    private async fetchSmartroApi(endpoint: string, dateStr: string): Promise<any | null> {
-        const url = `${this.apiBaseUrl}${endpoint}?COMP_NO=${this.compNo}&SHOP_CD=${this.storeCode}&SALE_DATE=${dateStr}`;
+    private async fetchSmartroApi(endpoint: string, dateStr: string): Promise<any[]> {
+        // According to GAS: ?STORE_ID=${CONFIG.STORE_ID}&SALE_DATE=${dateStr}
+        const url = `${this.apiBaseUrl}${endpoint}?STORE_ID=${this.storeCode}&SALE_DATE=${dateStr}`;
         const headers = {
             "Accept": "application/json",
+            "Content-Type": "application/json; charset=UTF-8",
             "Authorization": `Bearer ${this.authKey}`
         };
 
         try {
-            const response = await fetch(url, { headers });
+            const response = await fetch(url, { method: "get", headers });
             if (response.ok) {
-                const arrayBuffer = await response.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
-                const decodedText = iconv.decode(buffer, 'euc-kr');
-                return JSON.parse(decodedText);
+                // Since UTF-8 content-type is specified in GAS, try normal JSON parsing first
+                // If the response encoding is broken, we will fallback to iconv-lite. 
+                // But modern smilebiz APIs use utf-8 as per the new headers.
+                const json = await response.json();
+                if (json.CODE === "0000" && json.SALE_INFO) {
+                    return json.SALE_INFO;
+                }
+            } else {
+                console.warn(`Smartro API returned ${response.status} for ${endpoint}`);
             }
         } catch (e) {
-            console.error("Failed to fetch Smartro API: ", e);
+            console.error(`Failed to fetch Smartro API [${endpoint}]: `, e);
         }
-        return null;
+        return [];
     }
 
     private safeDate(dateStr: string): string {
         if (!dateStr) return "";
         if (dateStr.includes("-")) return dateStr.split(" ")[0];
-        if (dateStr.length === 8) return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+        if (dateStr.length >= 8) return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
         return dateStr;
-    }
-
-    private parseDatetime(dateStr: string | null, formats: string[]): Date | null {
-        if (!dateStr) return null;
-        for (const fmt of formats) {
-            try {
-                const parsed = parse(dateStr, fmt, new Date());
-                if (!isNaN(parsed.getTime())) return parsed;
-            } catch {
-                // Ignore and try next format
-            }
-        }
-        return null;
     }
 
     public async runSync(targetDate: Date) {
         const dateStr = format(targetDate, "yyyyMMdd");
+        const formattedDate = format(targetDate, "yyyy-MM-dd");
 
         // 0. Fetch Mappings
         const mappings: Record<string, string> = {};
@@ -73,144 +68,167 @@ export class SmartroSyncService {
             console.error("Failed to fetch menu mappings for smartro", e);
         }
 
-        const headData = await this.fetchSmartroApi("/getSaleHeadInfo", dateStr);
-        const detailData = await this.fetchSmartroApi("/getSaleDetailInfo", dateStr);
+        // 1. Fetch 3 APIs
+        const heads = await this.fetchSmartroApi("/getSaleHeadInfo", dateStr);
+        const details = await this.fetchSmartroApi("/getSaleDetailInfo", dateStr);
+        const additives = await this.fetchSmartroApi("/getSaleAdditiveInfo", dateStr);
 
-        if (!headData || !headData.SALE_INFO || headData.SALE_INFO.length === 0) {
+        if (heads.length === 0) {
             return {
-                date: format(targetDate, "yyyy-MM-dd"),
+                date: formattedDate,
                 provider: "smartro",
                 sales_count: 0,
                 menu_items_count: 0
             };
         }
 
-        const rawHeads = headData.SALE_INFO || [];
-        const rawDetails = (detailData && detailData.SALE_INFO) ? detailData.SALE_INFO : [];
-
         const salesToSave: any[] = [];
         const menuToSave: any[] = [];
 
-        for (const head of rawHeads) {
-            const oid = String(head.INV_SEQ || "");
-            if (!oid) continue;
+        // 2. Data Processing and Mapping (Join)
+        // Additive map by OrderKey + ItemCode
+        const addMap: Record<string, any[]> = {};
+        for (const add of additives) {
+            const orderKey = add.INV_SEQ || (`${add.POS_NO}_${add.CR_DATE}`);
+            const key = `${orderKey}_${add.ID_CODE}`;
+            if (!addMap[key]) addMap[key] = [];
+            addMap[key].push(add);
+        }
 
-            const grandTotal = parseFloat(head.GRAND_TOTAL || "0");
-            const isRefund = grandTotal < 0;
-            const orderStatus = isRefund ? "REFUND" : "PAID";
-            const orderDateStr = head.ORDER_DATE || head.CR_DATE || "";
+        // Detail map by OrderKey
+        const detailMap: Record<string, any[]> = {};
+        for (const det of details) {
+            const orderKey = det.INV_SEQ || (`${det.POS_NO}_${det.CR_DATE}`);
+            if (!detailMap[orderKey]) detailMap[orderKey] = [];
+            detailMap[orderKey].push(det);
+        }
 
-            const orderDetails = rawDetails.filter((d: any) => String(d.INV_SEQ || "") === oid);
+        for (const head of heads) {
+            // "N" is Normal (Paid), C/R are returns depending on the system. GAS script only stores N.
+            const isRefund = head.SALE_STAT !== 'N';
+
+            const orderKey = head.INV_SEQ || (`${head.POS_NO}_${head.ORDER_DATE || head.CR_DATE}`);
+            const orderDetails = detailMap[orderKey] || [];
 
             let orderName = "주문명 미상";
             if (orderDetails.length > 0) {
-                const mainItems = orderDetails.filter((d: any) => String(d.YN_SET_OPTION || "") !== "Y");
-                const firstItemName = mainItems.length > 0
-                    ? (mainItems[0].ID_DESC || "메뉴")
-                    : (orderDetails[0].ID_DESC || "메뉴");
-                const extraCount = mainItems.length > 1 ? mainItems.length - 1 : 0;
-                orderName = extraCount > 0 ? `${firstItemName} 외 ${extraCount}건` : firstItemName;
+                const firstItemName = orderDetails[0].ID_DESC || orderDetails[0].ID_MENUNAME || "메뉴";
+                if (orderDetails.length > 1) {
+                    orderName = `${firstItemName} 외 ${orderDetails.length - 1}건`;
+                } else {
+                    orderName = firstItemName;
+                }
             }
 
-            const bDateStr = this.safeDate(head.SALE_DATE || dateStr);
-            let bDate = targetDate;
-            const parsedBDate = this.parseDatetime(bDateStr, ["yyyy-MM-dd", "yyyyMMdd"]);
-            if (parsedBDate) bDate = parsedBDate;
-
-            let createdAtDt = targetDate; // Default fallback
-            if (orderDateStr) {
-                const parsed = this.parseDatetime(orderDateStr, ["yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd", "yyyyMMdd"]);
-                if (parsed) createdAtDt = parsed;
+            const orderNo = String(head.INV_PRTNUM || head.INV_SEQ || "UNKNOWN");
+            const orderTimeStr = head.ORDER_DATE || head.CR_DATE || "";
+            
+            let cDt = targetDate;
+            if (orderTimeStr) {
+                try {
+                    cDt = parse(orderTimeStr, "yyyy-MM-dd HH:mm:ss", new Date());
+                    if (isNaN(cDt.getTime())) cDt = parse(orderTimeStr, "yyyyMMddHHmmss", new Date());
+                    if (isNaN(cDt.getTime())) cDt = targetDate;
+                } catch { cDt = targetDate; }
             }
 
+            const grossAmt = parseFloat(head.GROSS_AMT || head.AX_AMT || "0");
+            const netAmt = parseFloat(head.NET_AMT || head.AX_AMT || "0");
+            const dcAmt = parseFloat(head.DC_AMT || "0");
+            
+            // Delivery extraction logic
+            let deliveryApp = "NONE";
+            let deliveryOrderNo = null;
+            if (head.INV_USERNAME) {
+                const uName = head.INV_USERNAME;
+                if (uName.includes('테이블오더')) deliveryApp = '테이블오더';
+                else if (uName.includes('배달')) deliveryApp = '배달';
+                else if (uName.includes('요기요')) deliveryApp = '요기요';
+                else if (uName.includes('쿠팡')) deliveryApp = '쿠팡이츠';
+                else if (uName.includes('배민') || uName.includes('배달의민족')) deliveryApp = '배달의민족';
+            }
+            if (head.CNT_CALL_ID) deliveryOrderNo = head.CNT_CALL_ID;
+
+            const customerUid = String(head.PNTASP_CUSTID || head.PNTASP_CUSTNM || "");
+
+            // In our system, we store refunds as negative values or mark order_status=REFUND
             salesToSave.push({
                 store_id: this.storeId,
-                oid: oid,
+                oid: orderNo, // Unique ID per store/provider
                 provider: "smartro",
-                business_date: bDate,
-                created_at: createdAtDt,
+                business_date: targetDate,
+                created_at: cDt,
                 order_name: orderName,
-                order_from: "POS",
-                order_status: orderStatus,
-                ordered_amount: Math.abs(parseFloat(head.GROSS_AMT || "0")),
-                paid_amount: Math.abs(grandTotal),
-                point_used_amount: Math.abs(parseFloat(head.AX_POINT || "0")),
-                customer_point_earned: 0,
-                prepaid_used_amount: 0,
-                discount_amount: Math.abs(parseFloat(head.DC_AMT || "0")),
-                refunded_amount: isRefund ? Math.abs(grandTotal) : 0,
-                customer_uid: String(head.PNTASP_CUSTID || ""),
+                order_from: head.INV_USERNAME || head.POS_NO || "POS",
+                order_status: isRefund ? "REFUND" : "PAID",
+                ordered_amount: Math.abs(grossAmt),
+                paid_amount: Math.abs(netAmt),
+                discount_amount: Math.abs(dcAmt),
+                refunded_amount: isRefund ? Math.abs(grossAmt) : 0,
+                customer_uid: customerUid,
                 customer_mobile_phone_number: null,
-                delivery_app: "NONE",
-                delivery_order_no: null
+                delivery_app: deliveryApp,
+                delivery_order_no: deliveryOrderNo
             });
 
-            let mainSeq = 0;
-            let currentOptSeq = 1;
-            for (let idx = 0; idx < orderDetails.length; idx++) {
-                const detail = orderDetails[idx];
-                const isOption = String(detail.YN_SET_OPTION || "") === "Y";
-                if (!isOption) {
-                    mainSeq += 1;
-                    currentOptSeq = 1;
-                }
+            // Process Details & Additives
+            orderDetails.forEach((det: any, index: number) => {
+                const detKey = `${orderKey}_${det.ID_CODE}`;
+                const detAdditives = addMap[detKey] || [];
+                
+                const rawItemName = det.ID_DESC || det.ID_MENUNAME || "알수없는 상품";
+                const itemName = mappings[rawItemName] || rawItemName;
+                
+                const qty = parseFloat(det.QTY || "1");
+                const sumPrice = parseFloat(det.SUMPRICE || "0");
+                const itemPrice = qty > 0 ? (sumPrice / qty) : 0;
 
-                let cDt = createdAtDt;
-                const detailDateStr = detail.CR_DATE || orderDateStr;
-                if (detailDateStr) {
-                    const parsed = this.parseDatetime(detailDateStr, ["yyyy-MM-dd HH:mm:ss"]);
-                    if (parsed) cDt = parsed;
-                }
+                // Main Item Row
+                menuToSave.push({
+                    store_id: this.storeId,
+                    oid: orderNo,
+                    main_item_seq: index + 1,
+                    created_at: cDt,
+                    product_name: itemName,
+                    product_price: Math.abs(itemPrice),
+                    quantity: Math.abs(qty),
+                    total_price: Math.abs(sumPrice),
+                    option_name: null,
+                    option_seq: null,
+                    option_id: null,
+                    option_price: null
+                });
 
-                if (!isOption) {
-                    const rawProdName = detail.ID_DESC || "";
-                    const normProdName = mappings[rawProdName] || rawProdName;
+                // Option (Additive) Rows
+                if (detAdditives.length > 0) {
+                    let optSeq = 1;
+                    for (const add of detAdditives) {
+                        const optNameRaw = add.ADDITIVE_DESC || add.RULE_DESC || "";
+                        
+                        // Ignore "선택안함"
+                        if (optNameRaw && optNameRaw.replace(/\s+/g, '') === "선택안함") continue;
 
-                    menuToSave.push({
-                        store_id: this.storeId,
-                        oid: oid,
-                        main_item_seq: mainSeq,
-                        created_at: cDt,
-                        product_name: normProdName,
-                        product_price: Math.abs(parseFloat(detail.POSPRICE || detail.QTYPRICE || "0")),
-                        quantity: parseInt(detail.QTY || "1", 10),
-                        total_price: Math.abs(parseFloat(detail.SUMPRICE || "0")),
-                        option_name: null,
-                        option_seq: null,
-                        option_id: null,
-                        option_price: null
-                    });
-                } else {
-                    // Find parent
-                    let parentItem = null;
-                    for (let pIdx = idx - 1; pIdx >= 0; pIdx--) {
-                        if (String(orderDetails[pIdx].YN_SET_OPTION || "") !== "Y") {
-                            parentItem = orderDetails[pIdx];
-                            break;
-                        }
+                        const normOptName = mappings[optNameRaw] || optNameRaw;
+                        const addQty = parseFloat(add.QTY || "1");
+                        const addPrice = parseFloat(add.ADD_PRICE || add.ADDITIVE_AMT || "0");
+
+                        menuToSave.push({
+                            store_id: this.storeId,
+                            oid: orderNo,
+                            main_item_seq: index + 1,
+                            created_at: cDt,
+                            product_name: itemName, // keep parent name for grouping
+                            product_price: 0, // Option row, so main price is 0
+                            quantity: Math.abs(addQty),
+                            total_price: Math.abs(addPrice),
+                            option_name: normOptName,
+                            option_seq: optSeq++,
+                            option_id: add.ID_CODE || "",
+                            option_price: Math.abs(addPrice)
+                        });
                     }
-
-                    const pNameRaw = parentItem ? (parentItem.ID_DESC || "") : "";
-                    const pNameNorm = mappings[pNameRaw] || pNameRaw;
-                    const pPrice = parentItem ? Math.abs(parseFloat(parentItem.POSPRICE || parentItem.QTYPRICE || "0")) : 0;
-                    const pTotal = parentItem ? Math.abs(parseFloat(parentItem.SUMPRICE || "0")) : 0;
-
-                    menuToSave.push({
-                        store_id: this.storeId,
-                        oid: oid,
-                        main_item_seq: mainSeq,
-                        created_at: cDt,
-                        product_name: pNameNorm,
-                        product_price: pPrice,
-                        quantity: parseInt(detail.QTY || "1", 10),
-                        total_price: pTotal,
-                        option_name: detail.ID_DESC || "",
-                        option_seq: currentOptSeq++,
-                        option_id: detail.ID_CODE || "",
-                        option_price: Math.abs(parseFloat(detail.POSPRICE || detail.QTYPRICE || "0"))
-                    });
                 }
-            }
+            });
         }
 
         // DB operations
@@ -237,13 +255,13 @@ export class SmartroSyncService {
                         store_id: this.storeId,
                         level: "INFO",
                         source: "SmartroSync",
-                        message: `Synced ${salesToSave.length} sales and ${menuToSave.length} menu items for ${dateStr}`
+                        message: `Synced ${salesToSave.length} sales and ${menuToSave.length} menu/option items for ${formattedDate}`
                     }
                 });
             });
 
             return {
-                date: format(targetDate, "yyyy-MM-dd"),
+                date: formattedDate,
                 provider: "smartro",
                 sales_count: salesToSave.length,
                 menu_items_count: menuToSave.length
@@ -255,7 +273,7 @@ export class SmartroSyncService {
                     store_id: this.storeId,
                     level: "ERROR",
                     source: "SmartroSync",
-                    message: `Database sync failed for ${dateStr}: ${error.message}`
+                    message: `Database sync failed for ${formattedDate}: ${error.message}`
                 }
             });
             throw error;
