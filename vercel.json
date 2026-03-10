@@ -2,15 +2,15 @@
     "crons": [
         {
             "path": "/api/v1/sync/payhere",
-            "schedule": "0 2 * * *"
+            "schedule": "0 17 * * *"
         },
         {
             "path": "/api/v1/sync/easypos",
-            "schedule": "10 2 * * *"
+            "schedule": "10 17 * * *"
         },
         {
             "path": "/api/v1/sync/smartro",
-            "schedule": "20 2 * * *"
+            "schedule": "20 17 * * *"
         }
     ]
 }

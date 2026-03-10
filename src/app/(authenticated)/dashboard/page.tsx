@@ -236,11 +236,11 @@ export default function DashboardPage() {
                     <h1 className="text-3xl font-bold tracking-tight text-[#191F28] mb-2">통합 매출 대시보드</h1>
                     <p className="text-[#8B95A1] font-medium">연동된 결제 채널의 실시간 매출 내역을 확인하세요.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full xl:w-auto">
+                <div className="flex flex-col xl:flex-row xl:items-center gap-3 w-full xl:w-auto">
                     <PresetDateRangePicker date={date} setDate={setDate} />
 
                     <div className="flex flex-col items-end gap-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <button
                                 onClick={() => fetchSales(true)}
                                 className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm whitespace-nowrap"
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                             </button>
                         </div>
                         {lastSyncTime && (
-                            <span className="text-[11px] text-[#8B95A1] font-medium px-1">
+                            <span className="text-[11px] text-[#8B95A1] font-medium px-1 w-full text-right">
                                 최근 동기화: {formatDate(lastSyncTime)}
                             </span>
                         )}

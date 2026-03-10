@@ -84,3 +84,6 @@ export async function POST(request: Request) {
         );
     }
 }
+
+// Allow Vercel Cron to trigger via GET request
+export { POST as GET };
