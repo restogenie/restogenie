@@ -156,8 +156,39 @@ export default function DashboardPage() {
             }
 
             let errorCount = 0;
+            let didBackfill = false;
+
             for (const conn of activeConns) {
                 try {
+                    // Check if initial 30-day backfill is needed
+                    if (conn.sync_status === "PENDING" && !["baemin", "coupangeats", "yogiyo"].includes(conn.vendor)) {
+                        didBackfill = true;
+                        toast.loading(`[${conn.vendor}] 과거 30일치 데이터를 동기화 중입니다. (1~2분 소요될 수 있습니다)`, { id: `backfill-${conn.vendor}` });
+                        
+                        let backfillErrors = 0;
+                        for (let i = 1; i <= 30; i++) {
+                            const targetDate = format(subDays(new Date(), i), 'yyyy-MM-dd');
+                            try {
+                                await axios.post(`/api/v1/sync/${conn.vendor}`, 
+                                    { store_id: currentStore.id, days_to_sync: 1, target_date: targetDate }, 
+                                    { headers: { "Authorization": `Bearer ${token}` } }
+                                );
+                            } catch(e) { backfillErrors++; }
+                        }
+                        
+                        if (backfillErrors < 30) {
+                            // Update sync_status to COMPLETED if it at least partially succeeded
+                            await axios.patch(`/api/v1/business/connection`, 
+                                { id: conn.id, sync_status: "COMPLETED" },
+                                { headers: { "Authorization": `Bearer ${token}` } }
+                            );
+                        } else {
+                            errorCount++;
+                        }
+                        toast.dismiss(`backfill-${conn.vendor}`);
+                    }
+
+                    // Always sync today as well
                     await axios.post(`/api/v1/sync/${conn.vendor}`, 
                         { store_id: currentStore.id, days_to_sync: 1 }, 
                         { headers: { "Authorization": `Bearer ${token}` } }

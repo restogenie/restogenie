@@ -136,3 +136,37 @@ export async function POST(request: Request) {
     }
 }
 
+export async function PATCH(request: Request) {
+    try {
+        const user = await getUserFromSession();
+        if (!user) {
+            return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = await request.json().catch(() => ({}));
+        const { id, sync_status } = body;
+
+        if (!id || !sync_status) {
+            return NextResponse.json({ detail: "Connection ID and sync_status are required" }, { status: 400 });
+        }
+
+        const connection = await db.posConnection.findFirst({
+            where: { id: parseInt(id) },
+            include: { store: true }
+        });
+
+        if (!connection || connection.store.user_id !== user.id) {
+            return NextResponse.json({ detail: "Connection not found or unauthorized" }, { status: 403 });
+        }
+
+        const updatedConnection = await db.posConnection.update({
+            where: { id: parseInt(id) },
+            data: { sync_status }
+        });
+
+        return NextResponse.json({ status: "success", connection: updatedConnection });
+    } catch (error: any) {
+        console.error("Error updating pos connection:", error);
+        return NextResponse.json({ detail: "Internal Server Error" }, { status: 500 });
+    }
+}
