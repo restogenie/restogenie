@@ -94,12 +94,12 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                 setTimeout(() => onNext(vendor), 2500);
             } else {
                 // Real-time API Sync Path
-                setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Initiating 30-day historical data synchronization pipeline...", level: "INFO" }]);
+                setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Initiating 1-day fast synchronization for mapping preview...", level: "INFO" }]);
                 pollingIntervalRef.current = setInterval(fetchLogs, 1500);
 
                 await axios.post(`/api/v1/sync/${vendor}`, {
                     store_id: currentStore.id,
-                    days_to_sync: 30
+                    days_to_sync: 1
                 });
 
                 if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
