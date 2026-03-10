@@ -186,6 +186,7 @@ export class SmartroSyncService {
                 // Main Item Row
                 menuToSave.push({
                     store_id: this.storeId,
+                    provider: "smartro",
                     oid: orderNo,
                     main_item_seq: index + 1,
                     created_at: cDt,
@@ -214,6 +215,7 @@ export class SmartroSyncService {
 
                         menuToSave.push({
                             store_id: this.storeId,
+                            provider: "smartro",
                             oid: orderNo,
                             main_item_seq: index + 1,
                             created_at: cDt,

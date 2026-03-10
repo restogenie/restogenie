@@ -5,7 +5,7 @@ import axios from 'axios';
 import { DateTime } from 'luxon';
 import { format, subDays } from 'date-fns';
 import { useStore } from '@/lib/StoreContext';
-import { FileDown, RefreshCw, ShoppingBag, Coins, Store, CalendarRange } from 'lucide-react';
+import { FileDown, RefreshCw, ShoppingBag, Coins, Store, Search } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -44,6 +44,8 @@ export default function DashboardPage() {
     const [chartData, setChartData] = useState<any[]>([]);
     const [pieData, setPieData] = useState<any[]>([]);
     const [connections, setConnections] = useState<any[]>([]);
+    const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+    const [syncing, setSyncing] = useState(false);
 
     // Date Filters
     const [date, setDate] = useState<DateRange | undefined>({
@@ -109,8 +111,16 @@ export default function DashboardPage() {
                 const connRes = await axios.get(`/api/v1/business/connection?store_id=${currentStore.id}`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 });
-                if (connRes.data?.data) {
-                    setConnections(connRes.data.data);
+                if (connRes.data?.connections) {
+                    setConnections(connRes.data.connections);
+                }
+
+                // Fetch latest system log to get last sync time
+                const logRes = await axios.get(`/api/v1/system/logs?store_id=${currentStore.id}&limit=1`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (logRes.data?.data && logRes.data.data.length > 0) {
+                    setLastSyncTime(logRes.data.data[0].created_at);
                 }
             }
         } catch (err: any) {
@@ -129,6 +139,51 @@ export default function DashboardPage() {
             fetchSales();
         }
     }, [date, currentStore]);
+
+    const handleManualSync = async () => {
+        if (!currentStore) return;
+        
+        try {
+            setSyncing(true);
+            const token = document.cookie.split("; ").find((row) => row.startsWith("admin_token="))?.split("=")[1];
+            if (!token) return;
+
+            const activeConns = connections.filter((c: any) => c.is_active);
+            if (activeConns.length === 0) {
+                toast.error("활성화된 연동 정보가 없습니다. 마법사 탭을 확인해주세요.");
+                setSyncing(false);
+                return;
+            }
+
+            let errorCount = 0;
+            for (const conn of activeConns) {
+                try {
+                    await axios.post(`/api/v1/sync/${conn.vendor}`, 
+                        { store_id: currentStore.id, days_to_sync: 1 }, 
+                        { headers: { "Authorization": `Bearer ${token}` } }
+                    );
+                } catch (e) {
+                    console.error(`Sync error for ${conn.vendor}:`, e);
+                    errorCount++;
+                }
+            }
+
+            if (errorCount > 0) {
+                toast.error(`일부 채널 데이터 동기화 과정에서 서버 응답 지연이 있었습니다 (${errorCount}건).`);
+            } else {
+                toast.success("데이터 동기화가 완료되었습니다.");
+            }
+            
+            // Re-fetch sales/logs to update the UI
+            fetchSales(true); 
+
+        } catch (e) {
+            console.error("Manual sync failed", e);
+            toast.error("데이터 동기화 요청에 실패했습니다.");
+        } finally {
+            setSyncing(false);
+        }
+    };
 
     const downloadExcel = () => {
         if (!sales || sales.length === 0) {
@@ -181,23 +236,40 @@ export default function DashboardPage() {
                     <h1 className="text-3xl font-bold tracking-tight text-[#191F28] mb-2">통합 매출 대시보드</h1>
                     <p className="text-[#8B95A1] font-medium">연동된 결제 채널의 실시간 매출 내역을 확인하세요.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full xl:w-auto">
                     <PresetDateRangePicker date={date} setDate={setDate} />
 
-                    <button
-                        onClick={() => fetchSales(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm"
-                    >
-                        <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-                        새로고침
-                    </button>
-                    <button
-                        onClick={downloadExcel}
-                        className="flex-1 sm:flex-none flex justify-center items-center gap-2 px-4 py-2 bg-[#3182F6] text-white rounded-xl font-semibold hover:bg-[#1B64DA] transition-colors shadow-sm"
-                    >
-                        <FileDown className="w-4 h-4" />
-                        엑셀 다운로드
-                    </button>
+                    <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => fetchSales(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm whitespace-nowrap"
+                            >
+                                <Search className={cn("w-4 h-4", refreshing && "animate-pulse text-[#3182F6]")} />
+                                조회
+                            </button>
+                            <button
+                                disabled={syncing}
+                                onClick={handleManualSync}
+                                className="flex items-center gap-2 px-4 py-2 bg-[#F2F4F6] border border-[#E5E8EB] text-[#191F28] rounded-xl font-semibold hover:bg-[#E5E8EB] transition-colors shadow-sm whitespace-nowrap disabled:opacity-50"
+                            >
+                                <RefreshCw className={cn("w-4 h-4", syncing && "animate-spin text-[#3182F6]")} />
+                                {syncing ? "동기화 중..." : "동기화"}
+                            </button>
+                            <button
+                                onClick={downloadExcel}
+                                className="flex justify-center items-center gap-2 px-4 py-2 bg-[#3182F6] text-white rounded-xl font-semibold hover:bg-[#1B64DA] transition-colors shadow-sm whitespace-nowrap"
+                            >
+                                <FileDown className="w-4 h-4" />
+                                엑셀 다운로드
+                            </button>
+                        </div>
+                        {lastSyncTime && (
+                            <span className="text-[11px] text-[#8B95A1] font-medium px-1">
+                                최근 동기화: {formatDate(lastSyncTime)}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 

@@ -3,32 +3,25 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id               Int      @id @default(autoincrement())
-  email            String   @unique
+  id               Int           @id @default(autoincrement())
+  email            String        @unique
   password_hash    String
   name             String
   phone            String?
-  agreed_terms     Boolean  @default(false)
-  agreed_privacy   Boolean  @default(false)
-  agreed_marketing Boolean  @default(false)
-  created_at       DateTime @default(now())
-
-  stores           Store[]
+  agreed_terms     Boolean       @default(false)
+  agreed_privacy   Boolean       @default(false)
+  agreed_marketing Boolean       @default(false)
+  created_at       DateTime      @default(now())
   store_members    StoreMember[]
+  stores           Store[]
 
   @@map("users")
-}
-
-enum Role {
-  OWNER
-  MANAGER
-  STAFF
 }
 
 model StoreMember {
@@ -37,7 +30,6 @@ model StoreMember {
   user_id    Int
   role       Role     @default(STAFF)
   created_at DateTime @default(now())
-  
   store      Store    @relation(fields: [store_id], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -46,27 +38,24 @@ model StoreMember {
 }
 
 model Store {
-  id                 Int      @id @default(autoincrement())
-  user_id            Int
-  name               String
-  business_number    String   // 사업자등록번호
-  business_condition String?  // 업태
-  business_type      String?  // 업종
-  opening_date       DateTime? @db.Date // 개업일자
-  phone              String?  // 사업장 전화번호
-  created_at         DateTime @default(now())
-
-  // --- Monetization ---
-  subscription_status    String   @default("TRIAL") // TRIAL, ACTIVE, CANCELED, PAST_DUE
-  subscription_end_date  DateTime? // 구독 만료일 (향후 결제 연동 시 갱신)
-  billing_key            String?   // 자동 결제를 위한 빌링키
-  
-  user               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  pos_connections    PosConnection[]
-  sales              Sale[]
-  menu_mappings      MenuMapping[]
-  system_logs        SystemLog[]
-  members            StoreMember[]
+  id                    Int             @id @default(autoincrement())
+  user_id               Int
+  name                  String
+  business_number       String
+  business_condition    String?
+  business_type         String?
+  opening_date          DateTime?       @db.Date
+  phone                 String?
+  created_at            DateTime        @default(now())
+  billing_key           String?
+  subscription_end_date DateTime?
+  subscription_status   String          @default("TRIAL")
+  menu_mappings         MenuMapping[]
+  pos_connections       PosConnection[]
+  sales                 Sale[]
+  members               StoreMember[]
+  user                  User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  system_logs           SystemLog[]
 
   @@index([user_id])
   @@map("stores")
@@ -75,15 +64,14 @@ model Store {
 model PosConnection {
   id          Int      @id @default(autoincrement())
   store_id    Int
-  vendor      String   // payhere, easypos, smartro, baemin, coupangeats
-  auth_code_1 String?  // ID or API Key
-  auth_code_2 String?  // PW or COMP_NO
-  auth_code_3 String?  // STORE_CODE
+  vendor      String
+  auth_code_1 String?
+  auth_code_2 String?
+  auth_code_3 String?
   is_active   Boolean  @default(true)
-  sync_status String   @default("PENDING") // PENDING, SYNCING, FINISHED, ERROR
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
-
+  sync_status String   @default("PENDING")
   store       Store    @relation(fields: [store_id], references: [id], onDelete: Cascade)
 
   @@unique([store_id, vendor])
@@ -91,28 +79,27 @@ model PosConnection {
 }
 
 model Sale {
-  store_id              Int
-  provider              String   @default("payhere") // 데이터 제공자 (payhere, easypos, smartro)
-  oid                   String   // 기존 주문번호(oid)
-  business_date         DateTime @db.Date // 영업일 (날짜)
-  created_at            DateTime // 주문 생성 일시
-  order_name            String?  // 주문명
-  order_from            String?  // 주문 경로
-  order_status          String?  // 주문 상태
-  ordered_amount        Float    @default(0.0) // 결제 금액
-  paid_amount           Float    @default(0.0) // 실 결제 금액
-  point_used_amount     Float    @default(0.0) // 포인트 사용
-  customer_point_earned Float    @default(0.0) // 포인트 적립
-  prepaid_used_amount   Float    @default(0.0) // 선불권 사용
-  discount_amount       Float    @default(0.0) // 할인
-  refunded_amount       Float    @default(0.0) // 환불
-  customer_uid          String?  // 고객 id
-  customer_mobile_phone_number String? // 고객 전화번호
-  delivery_app          String?  // 배달 앱
-  delivery_order_no     String?  // 배달 주문번호
-
-  store                 Store    @relation(fields: [store_id], references: [id], onDelete: Cascade)
-  menu_items            MenuLineItem[]
+  store_id                     Int
+  provider                     String         @default("payhere")
+  oid                          String
+  business_date                DateTime       @db.Date
+  created_at                   DateTime
+  order_name                   String?
+  order_from                   String?
+  order_status                 String?
+  ordered_amount               Float          @default(0.0)
+  paid_amount                  Float          @default(0.0)
+  point_used_amount            Float          @default(0.0)
+  customer_point_earned        Float          @default(0.0)
+  prepaid_used_amount          Float          @default(0.0)
+  discount_amount              Float          @default(0.0)
+  refunded_amount              Float          @default(0.0)
+  customer_uid                 String?
+  customer_mobile_phone_number String?
+  delivery_app                 String?
+  delivery_order_no            String?
+  menu_items                   MenuLineItem[]
+  store                        Store          @relation(fields: [store_id], references: [id], onDelete: Cascade)
 
   @@id([store_id, provider, oid])
   @@index([store_id])
@@ -122,40 +109,38 @@ model Sale {
 }
 
 model MenuLineItem {
-  id                  Int      @id @default(autoincrement())
-  unique_oid          String   @unique @default(uuid()) // 고유주문ID
-  store_id            Int
-  provider            String
-  oid                 String   // 주문 OID (매칭용)
-  main_item_seq       Int?     // 메인 메뉴 순번
-  created_at          DateTime? // 주문 생성일시 (KST)
-  product_name        String?  // 상품명
-  product_price       Float    @default(0.0) // 상품 단가
-  quantity            Int      @default(0) // 상품 수량
-  total_price         Float    @default(0.0) // 상품 합계 금액
-  option_name         String?  // 옵션명
-  option_seq          Int?     // 옵션 순번
-  option_id           String?  // 옵션 ID
-  option_price        Float?   // 옵션 가격
-
-  sale Sale @relation(fields: [store_id, provider, oid], references: [store_id, provider, oid], onDelete: Cascade)
+  id            Int       @id @default(autoincrement())
+  unique_oid    String    @unique @default(uuid())
+  store_id      Int
+  provider      String
+  oid           String
+  main_item_seq Int?
+  created_at    DateTime?
+  product_name  String?
+  product_price Float     @default(0.0)
+  quantity      Int       @default(0)
+  total_price   Float     @default(0.0)
+  option_name   String?
+  option_seq    Int?
+  option_id     String?
+  option_price  Float?
+  sale          Sale      @relation(fields: [store_id, provider, oid], references: [store_id, provider, oid], onDelete: Cascade)
 
   @@index([store_id, provider, oid])
   @@map("menu_db")
 }
 
 model MenuMapping {
-  id              Int      @id @default(autoincrement())
-  store_id        Int
-  provider        String   // e.g. payhere, easypos, smartro
-  original_name   String   // The raw string from POS
-  normalized_name String   // The master aligned name
-  custom_id       String?  // User-defined manual ID
-  is_option       Boolean  @default(false) // Whether this is an option or main menu
+  id              Int       @id @default(autoincrement())
+  provider        String
+  original_name   String
+  normalized_name String
   created_at      DateTime? @default(now())
   updated_at      DateTime? @updatedAt
-
-  store           Store    @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  store_id        Int
+  custom_id       String?
+  is_option       Boolean   @default(false)
+  store           Store     @relation(fields: [store_id], references: [id], onDelete: Cascade)
 
   @@unique([store_id, provider, original_name])
   @@index([store_id])
@@ -165,14 +150,19 @@ model MenuMapping {
 
 model SystemLog {
   id         Int      @id @default(autoincrement())
-  store_id   Int?
-  level      String   @default("INFO") @db.VarChar(50) // INFO, ERROR, WARNING
-  source     String   @db.VarChar(100) // e.g., 'PayhereSync', 'Auth', 'Dashboard'
-  message    String   @db.Text
+  level      String   @default("INFO") @db.VarChar(50)
+  source     String   @db.VarChar(100)
+  message    String
   created_at DateTime @default(now())
-
+  store_id   Int?
   store      Store?   @relation(fields: [store_id], references: [id], onDelete: Cascade)
 
   @@index([store_id])
   @@map("system_logs")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  STAFF
 }
