@@ -60,7 +60,7 @@ export async function POST(request: Request) {
                 business_number: businessNumber,
                 business_condition: businessCondition,
                 business_type: businessType,
-                opening_date: openingDate,
+                opening_date: new Date(openingDate),
                 phone: storePhone || null,
             }
         });
@@ -110,7 +110,7 @@ export async function PUT(request: Request) {
                 name,
                 business_condition,
                 business_type,
-                opening_date,
+                opening_date: opening_date ? new Date(opening_date) : undefined,
                 phone: phone || null,
             }
         });
