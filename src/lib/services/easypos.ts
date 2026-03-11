@@ -54,7 +54,7 @@ export class EasyposSyncService {
     private formatDatetime(kiccDt: string | null): Date {
         if (!kiccDt || kiccDt.length !== 14) return new Date();
         try {
-            return new Date(
+            const dt = new Date(
                 parseInt(kiccDt.substring(0, 4)),
                 parseInt(kiccDt.substring(4, 6)) - 1, // Month is 0-indexed in JS
                 parseInt(kiccDt.substring(6, 8)),
@@ -62,6 +62,9 @@ export class EasyposSyncService {
                 parseInt(kiccDt.substring(10, 12)),
                 parseInt(kiccDt.substring(12, 14))
             );
+            // Vercel interprets these components as UTC, so it's 9 hours ahead of true KST. 
+            // We subtract 9 hours so the absolute Unix timestamp correctly corresponds to KST.
+            return new Date(dt.getTime() - 9 * 60 * 60 * 1000);
         } catch {
             return new Date();
         }

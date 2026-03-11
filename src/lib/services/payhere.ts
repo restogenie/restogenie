@@ -73,7 +73,11 @@ export class PayhereSyncService {
     private parseDatetime(isoStr: string | null | undefined): Date | null {
         if (!isoStr) return null;
         try {
-            return parseISO(isoStr.replace("Z", "+00:00"));
+            const dt = parseISO(isoStr.replace("Z", "+00:00"));
+            if (isNaN(dt.getTime())) return null;
+            
+            // If isoStr lacks explicit timezone, Vercel parses it as UTC, pushing it 9 hours ahead of KST
+            return new Date(dt.getTime() - 9 * 60 * 60 * 1000);
         } catch {
             return null;
         }
