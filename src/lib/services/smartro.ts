@@ -128,7 +128,12 @@ export class SmartroSyncService {
                 try {
                     cDt = parse(orderTimeStr, "yyyy-MM-dd HH:mm:ss", new Date());
                     if (isNaN(cDt.getTime())) cDt = parse(orderTimeStr, "yyyyMMddHHmmss", new Date());
-                    if (isNaN(cDt.getTime())) cDt = targetDate;
+                    
+                    if (isNaN(cDt.getTime())) {
+                        cDt = targetDate;
+                    } else {
+                        cDt = new Date(cDt.getTime() - 9 * 60 * 60 * 1000);
+                    }
                 } catch { cDt = targetDate; }
             }
 
