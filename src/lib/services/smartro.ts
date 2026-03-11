@@ -128,13 +128,7 @@ export class SmartroSyncService {
                 try {
                     cDt = parse(orderTimeStr, "yyyy-MM-dd HH:mm:ss", new Date());
                     if (isNaN(cDt.getTime())) cDt = parse(orderTimeStr, "yyyyMMddHHmmss", new Date());
-                    
-                    if (isNaN(cDt.getTime())) {
-                        cDt = targetDate;
-                    } else {
-                        // Vercel parses the KST string as UTC, effectively pushing it 9 hours into the future.
-                        cDt = new Date(cDt.getTime() - 9 * 60 * 60 * 1000);
-                    }
+                    if (isNaN(cDt.getTime())) cDt = targetDate;
                 } catch { cDt = targetDate; }
             }
 
