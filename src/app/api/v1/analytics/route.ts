@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getUserFromSession } from "@/lib/auth";
+import { DateTime } from "luxon";
 
 export async function GET(request: Request) {
     const user = await getUserFromSession();
@@ -84,12 +85,10 @@ export async function GET(request: Request) {
             revenueTrendMap[dateStr].orders += 1;
             totalRevenueOverall += sale.paid_amount;
 
-            // Heatmap (Convert Vercel UTC natively to KST +9 hours)
-            const createdAtUtc = new Date(sale.created_at);
-            const kstDate = new Date(createdAtUtc.getTime() + 9 * 60 * 60 * 1000);
-            
-            const dayOfWeek = kstDate.getUTCDay(); // 0-6
-            const hourOfDay = kstDate.getUTCHours(); // 0-23
+            // Heatmap (Convert UTC natively to KST)
+            const dt = DateTime.fromJSDate(new Date(sale.created_at)).setZone('Asia/Seoul');
+            const dayOfWeek = dt.weekday === 7 ? 0 : dt.weekday; // JS uses 0=Sun, Luxon uses 7=Sun
+            const hourOfDay = dt.hour;
             heatmap[dayOfWeek][hourOfDay] += sale.paid_amount;
 
             // Payment Methods
