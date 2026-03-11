@@ -84,10 +84,12 @@ export async function GET(request: Request) {
             revenueTrendMap[dateStr].orders += 1;
             totalRevenueOverall += sale.paid_amount;
 
-            // Heatmap
-            const createdAt = new Date(sale.created_at);
-            const dayOfWeek = createdAt.getDay(); // 0-6
-            const hourOfDay = createdAt.getHours(); // 0-23
+            // Heatmap (Convert Vercel UTC natively to KST +9 hours)
+            const createdAtUtc = new Date(sale.created_at);
+            const kstDate = new Date(createdAtUtc.getTime() + 9 * 60 * 60 * 1000);
+            
+            const dayOfWeek = kstDate.getUTCDay(); // 0-6
+            const hourOfDay = kstDate.getUTCHours(); // 0-23
             heatmap[dayOfWeek][hourOfDay] += sale.paid_amount;
 
             // Payment Methods
