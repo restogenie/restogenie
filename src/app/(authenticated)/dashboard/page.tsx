@@ -100,9 +100,9 @@ export default function DashboardPage() {
                 });
                 const sortedData = Object.values(dailyMap).sort((a: any, b: any) => a.name.localeCompare(b.name));
                 const formattedChartData = sortedData.map((item: any) => {
-                    const dt = new Date(item.name);
+                    const dt = DateTime.fromISO(item.name).setZone('Asia/Seoul');
                     const days = ['일', '월', '화', '수', '목', '금', '토'];
-                    const formattedName = `${dt.getMonth() + 1}/${dt.getDate()}(${days[dt.getDay()]})`;
+                    const formattedName = `${dt.month}/${dt.day}(${days[dt.weekday === 7 ? 0 : dt.weekday]})`;
                     return { ...item, name: formattedName };
                 });
                 setChartData(formattedChartData);
@@ -260,7 +260,7 @@ export default function DashboardPage() {
 
     const formatDate = (isoStr: string) => {
         if (!isoStr) return '-';
-        return DateTime.fromISO(isoStr).toFormat('yyyy.MM.dd HH:mm');
+        return DateTime.fromISO(isoStr).setZone('Asia/Seoul').toFormat('yyyy.MM.dd HH:mm');
     };
 
     const formatCurrency = (val: number) => {
