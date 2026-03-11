@@ -128,13 +128,7 @@ export class SmartroSyncService {
                 try {
                     cDt = parse(orderTimeStr, "yyyy-MM-dd HH:mm:ss", new Date());
                     if (isNaN(cDt.getTime())) cDt = parse(orderTimeStr, "yyyyMMddHHmmss", new Date());
-                    
-                    if (isNaN(cDt.getTime())) {
-                        cDt = targetDate;
-                    } else {
-                        // Vercel parses the KST string as UTC. Subtract 9 hours to find the true absolute UTC timestamp.
-                        cDt = new Date(cDt.getTime() - 9 * 60 * 60 * 1000);
-                    }
+                    if (isNaN(cDt.getTime())) cDt = targetDate;
                 } catch { cDt = targetDate; }
             }
 
