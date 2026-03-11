@@ -98,7 +98,14 @@ export default function DashboardPage() {
                     if (item.provider === 'easypos') dailyMap[d].easypos += item.paid_amount;
                     if (item.provider === 'smartro') dailyMap[d].smartro += item.paid_amount;
                 });
-                setChartData(Object.values(dailyMap).sort((a: any, b: any) => a.name.localeCompare(b.name)));
+                const sortedData = Object.values(dailyMap).sort((a: any, b: any) => a.name.localeCompare(b.name));
+                const formattedChartData = sortedData.map((item: any) => {
+                    const dt = new Date(item.name);
+                    const days = ['일', '월', '화', '수', '목', '금', '토'];
+                    const formattedName = `${dt.getMonth() + 1}/${dt.getDate()}(${days[dt.getDay()]})`;
+                    return { ...item, name: formattedName };
+                });
+                setChartData(formattedChartData);
 
                 // Compute Pie Chart Data
                 setPieData([
