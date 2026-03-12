@@ -40,7 +40,7 @@ export function PresetDateRangePicker({ date, setDate, className }: PresetDateRa
                         id="date"
                         variant={"outline"}
                         className={cn(
-                            "w-full sm:w-[300px] justify-start text-left font-medium bg-white border-[#E5E8EB] shadow-sm rounded-xl px-4 py-2 hover:bg-[#F2F4F6] text-[#4E5968]",
+                            "w-full sm:w-[300px] justify-start text-left font-medium bg-white border-[#E5E8EB] shadow-sm rounded-md px-4 py-2 hover:bg-[#F2F4F6] text-[#4E5968]",
                             !date && "text-muted-foreground"
                         )}
                     >
@@ -58,7 +58,7 @@ export function PresetDateRangePicker({ date, setDate, className }: PresetDateRa
                         )}
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl overflow-hidden" align="start">
+                <PopoverContent className="w-auto p-0 rounded-md shadow-xl overflow-hidden" align="start">
                     <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
                         {/* Presets Sidebar */}
                         <div className="flex flex-col p-2 space-y-1 w-full sm:w-[150px] bg-gray-50/50">
@@ -67,7 +67,7 @@ export function PresetDateRangePicker({ date, setDate, className }: PresetDateRa
                                 <Button
                                     key={preset.label}
                                     variant="ghost"
-                                    className="justify-start px-3 py-2 h-9 text-sm text-gray-700 hover:bg-gray-100/80 rounded-lg whitespace-nowrap"
+                                    className="justify-start px-3 py-2 h-9 text-sm text-gray-700 hover:bg-gray-100/80 rounded-md whitespace-nowrap"
                                     onClick={() => {
                                         setDate(preset.getValue());
                                         setIsOpen(false);
@@ -92,10 +92,10 @@ export function PresetDateRangePicker({ date, setDate, className }: PresetDateRa
 
                             {/* Action Buttons */}
                             <div className="flex justify-end gap-2 pt-3 mt-3 border-t border-gray-100 pb-1 pr-2">
-                                <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)} className="rounded-lg text-gray-500 hover:text-gray-900">
+                                <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)} className="rounded-md text-gray-500 hover:text-gray-900">
                                     취소
                                 </Button>
-                                <Button size="sm" onClick={() => setIsOpen(false)} className="rounded-lg bg-[#3182F6] hover:bg-[#1B64DA]">
+                                <Button size="sm" onClick={() => setIsOpen(false)} className="rounded-md bg-[#3182F6] hover:bg-[#1B64DA]">
                                     적용
                                 </Button>
                             </div>

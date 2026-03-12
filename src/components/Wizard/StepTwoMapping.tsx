@@ -166,7 +166,7 @@ export function StepTwoMapping({ onNext, onPrev, vendor }: StepTwoProps) {
                         <p className="text-sm text-muted-foreground">데이터베이스에서 방금 연동된 주문 데이터를 실시간으로 가져오는 중입니다...</p>
                     </div>
                 ) : salesDetails.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 border rounded-lg bg-muted/20">
+                    <div className="flex flex-col items-center justify-center py-20 border rounded-md bg-muted/20">
                         <TableProperties className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
                         <p className="font-semibold text-lg text-foreground mb-1">최근 동기화된 데이터가 없습니다.</p>
                         <p className="text-sm text-muted-foreground">이전 단계에서 POS 연결을 테스트하거나 오늘 날짜에 매출이 있는지 확인하세요.</p>

@@ -281,7 +281,7 @@ export default function DashboardPage() {
                         <div className="flex flex-wrap items-center gap-2">
                             <button
                                 onClick={() => fetchSales(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm whitespace-nowrap"
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-md font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm whitespace-nowrap"
                             >
                                 <Search className={cn("w-4 h-4", refreshing && "animate-pulse text-[#3182F6]")} />
                                 조회
@@ -289,14 +289,14 @@ export default function DashboardPage() {
                             <button
                                 disabled={syncing}
                                 onClick={handleManualSync}
-                                className="flex items-center gap-2 px-4 py-2 bg-[#F2F4F6] border border-[#E5E8EB] text-[#191F28] rounded-xl font-semibold hover:bg-[#E5E8EB] transition-colors shadow-sm whitespace-nowrap disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 bg-[#F2F4F6] border border-[#E5E8EB] text-[#191F28] rounded-md font-semibold hover:bg-[#E5E8EB] transition-colors shadow-sm whitespace-nowrap disabled:opacity-50"
                             >
                                 <RefreshCw className={cn("w-4 h-4", syncing && "animate-spin text-[#3182F6]")} />
                                 {syncing ? "동기화 중..." : "동기화"}
                             </button>
                             <button
                                 onClick={downloadExcel}
-                                className="flex justify-center items-center gap-2 px-4 py-2 bg-[#3182F6] text-white rounded-xl font-semibold hover:bg-[#1B64DA] transition-colors shadow-sm whitespace-nowrap"
+                                className="flex justify-center items-center gap-2 px-4 py-2 bg-[#3182F6] text-white rounded-md font-semibold hover:bg-[#1B64DA] transition-colors shadow-sm whitespace-nowrap"
                             >
                                 <FileDown className="w-4 h-4" />
                                 엑셀 다운로드
@@ -315,7 +315,7 @@ export default function DashboardPage() {
             {connections.filter(c => c.sync_status === 'SYNCING').length > 0 && (
                 <div className="flex flex-col gap-2">
                     {connections.filter(c => c.sync_status === 'SYNCING').map((conn, idx) => (
-                        <div key={idx} className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-sm animate-pulse">
+                        <div key={idx} className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md flex items-center justify-between shadow-sm animate-pulse">
                             <div className="flex items-center gap-3">
                                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
                                 <span className="font-semibold text-sm">
@@ -366,7 +366,7 @@ export default function DashboardPage() {
             {!loading && sales.length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Line Chart */}
-                    <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-[#F2F4F6] p-6">
+                    <div className="lg:col-span-2 bg-white rounded-md shadow-sm border border-[#F2F4F6] p-6">
                         <h3 className="text-lg font-bold text-[#191F28] mb-6">일별 매출 추이</h3>
                         <div className="h-[300px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
@@ -385,7 +385,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Pie Chart */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-[#F2F4F6] p-6">
+                    <div className="bg-white rounded-md shadow-sm border border-[#F2F4F6] p-6">
                         <h3 className="text-lg font-bold text-[#191F28] mb-6">포스사 매출 점유율</h3>
                         <div className="h-[300px] w-full relative">
                             <ResponsiveContainer width="100%" height="100%">
@@ -416,7 +416,7 @@ export default function DashboardPage() {
             )}
 
             {/* Data Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-[#F2F4F6] overflow-hidden">
+            <div className="bg-white rounded-md shadow-sm border border-[#F2F4F6] overflow-hidden">
                 <div className="px-6 py-5 border-b border-[#F2F4F6]">
                     <h3 className="text-lg font-bold text-[#191F28]">최근 주문 내역</h3>
                 </div>
@@ -507,10 +507,10 @@ export default function DashboardPage() {
 
 function StatCard({ title, value, subtitle, icon }: { title: string, value: string, subtitle: string, icon: React.ReactNode }) {
     return (
-        <div className="bg-white p-6 rounded-2xl border border-[#F2F4F6] shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+        <div className="bg-white p-6 rounded-md border border-[#F2F4F6] shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-[#4E5968] font-semibold text-sm">{title}</h3>
-                <div className="p-2 bg-[#F2F4F6] rounded-xl">{icon}</div>
+                <div className="p-2 bg-[#F2F4F6] rounded-md">{icon}</div>
             </div>
             <div>
                 <div className="text-2xl font-bold text-[#191F28] mb-1">{value}</div>

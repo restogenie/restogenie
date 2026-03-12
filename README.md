@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RestoGenie 🍽️✨
 
-## Getting Started
+A next-generation, Multi-Tenant SaaS platform tailored for restaurant franchise owners and administrators. Seamlessly integrate multiple POS (Point of Sale) systems, delivery platforms, and external APIs to gain deep, actionable insights into your business.
 
-First, run the development server:
+## 🚀 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Multi-Tenant Architecture**: Robust data isolation ensuring each user controls and views only their respective stores (`store_id` based schema).
+- **Universal POS Integration**: Connect dynamically to major POS providers (Payhere, Smartro, Easypos) and Delivery apps (Baemin, etc.) via a user-friendly 3-step Wizard.
+- **Background Syncing**: Intelligent background cron jobs fetching up to 30 days of historical sales data concurrently without hitting serverless timeout limits.
+- **AI Menu Mapping**: Automatically normalize thousands of disparate menu items into standard names using Gemini AI (`@google/generative-ai`).
+- **Deep Analytics Dashboard**: Track daily sales, funnel conversions, and matrix heatmaps for Peak-time and ABC (Activity-Based Costing) analysis via Recharts.
+- **CCTV Foot Traffic & Funnel**: Integration with the May-I API to analyze store foot traffic vs. actual POS orders.
+- **Multi-LLM Business Chatbot**: A contextual floating AI assistant offering ChatGPT, Gemini, and Claude options. Owners can securely input their own API keys to query daily sales and RAG-injected business insights.
+- **Automated Weekly Reports**: Generate clean, aesthetic Weekly Reports in HTML/PDF format based on your store's performance.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Framework**: Next.js 15 (App Router, Serverless Edge API Routes)
+- **Database**: PostgreSQL (Supabase) + Prisma ORM
+- **Styling**: Tailwind CSS + `shadcn/ui` + Lucide Icons
+- **Auth**: Custom JWT-based Edge Authentication + `jose`
+- **Charts**: Recharts
+- **AI Integration**: Vercel AI SDK (`ai`), `@google/generative-ai`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🏃 Getting Started
 
-## Learn More
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/restogenie.co.kr.git
+   cd restogenie.co.kr
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Configure Environment Variables:**
+   Duplicate `.env.example` to `.env` and fill in necessary keys (Supabase URL, Smartro Auth, etc.)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-## Deploy on Vercel
+5. **Open browser:**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ☁️ Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is optimized for deployment on **Vercel**. Pushing to the `main` branch will automatically trigger a production build. PostgreSQL is managed via **Supabase**.

@@ -92,7 +92,7 @@ export default function BillingPage() {
                     <CardContent className="flex flex-col items-center justify-center py-8">
                         {isActive ? (
                             <div className="text-center space-y-4">
-                                <div className="mx-auto w-16 h-16 bg-blue-50 flex items-center justify-center rounded-2xl mb-2">
+                                <div className="mx-auto w-16 h-16 bg-blue-50 flex items-center justify-center rounded-md mb-2">
                                     <CreditCard className="w-8 h-8 text-blue-600" />
                                 </div>
                                 <p className="font-bold text-[#191F28]">결제 수단이 등록되어 있습니다.</p>
@@ -100,7 +100,7 @@ export default function BillingPage() {
                             </div>
                         ) : (
                             <div className="text-center space-y-4">
-                                <div className="mx-auto w-16 h-16 bg-gray-50 flex items-center justify-center rounded-2xl mb-2">
+                                <div className="mx-auto w-16 h-16 bg-gray-50 flex items-center justify-center rounded-md mb-2">
                                     <CreditCard className="w-8 h-8 text-gray-400" />
                                 </div>
                                 <p className="font-medium text-gray-500">아직 등록된 결제 수단이 없습니다.</p>

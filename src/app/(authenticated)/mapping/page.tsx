@@ -218,14 +218,14 @@ export default function MappingPage() {
                     <button
                         onClick={handleAISuggest}
                         disabled={suggestingAI || stats.pending === 0}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 text-indigo-600 rounded-xl font-bold hover:from-indigo-100 hover:to-purple-100 transition-all shadow-sm disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 text-indigo-600 rounded-md font-bold hover:from-indigo-100 hover:to-purple-100 transition-all shadow-sm disabled:opacity-50"
                     >
                         <Sparkles className={cn("w-4 h-4", suggestingAI && "animate-pulse")} />
                         ✨ AI 추천 받기
                     </button>
                     <button
                         onClick={() => fetchMappings(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-md font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm"
                     >
                         <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
                         새로고침
@@ -235,7 +235,7 @@ export default function MappingPage() {
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-2xl border border-[#F2F4F6] p-5 shadow-sm flex flex-col justify-between">
+                <div className="bg-white rounded-md border border-[#F2F4F6] p-5 shadow-sm flex flex-col justify-between">
                     <div className="flex justify-between items-start mb-2">
                         <span className="text-[#8B95A1] font-semibold text-sm">전체 취급 메뉴수</span>
                         <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
@@ -245,7 +245,7 @@ export default function MappingPage() {
                     <div className="text-2xl font-bold text-[#191F28]">{stats.total.toLocaleString()}<span className="text-sm font-medium text-[#8B95A1] ml-1">건</span></div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-[#F2F4F6] p-5 shadow-sm flex flex-col justify-between">
+                <div className="bg-white rounded-md border border-[#F2F4F6] p-5 shadow-sm flex flex-col justify-between">
                     <div className="flex justify-between items-start mb-2">
                         <span className="text-[#8B95A1] font-semibold text-sm">정규화 매핑 완료</span>
                         <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
@@ -263,7 +263,7 @@ export default function MappingPage() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-[#F2F4F6] p-5 shadow-sm flex flex-col justify-between">
+                <div className="bg-white rounded-md border border-[#F2F4F6] p-5 shadow-sm flex flex-col justify-between">
                     <div className="flex justify-between items-start mb-2">
                         <span className="text-[#8B95A1] font-semibold text-sm">매핑 대기 (미분류)</span>
                         <div className="w-8 h-8 rounded-full bg-yellow-50 flex items-center justify-center">
@@ -275,7 +275,7 @@ export default function MappingPage() {
 
                 <button
                     onClick={() => { setActiveTab('pending'); setShowNewOnly(true); }}
-                    className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl border border-indigo-400 p-5 shadow-sm flex flex-col justify-between text-left hover:shadow-md transition-shadow group relative overflow-hidden"
+                    className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-md border border-indigo-400 p-5 shadow-sm flex flex-col justify-between text-left hover:shadow-md transition-shadow group relative overflow-hidden"
                 >
                     <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <div className="flex justify-between items-start mb-2 relative z-10">
@@ -322,7 +322,7 @@ export default function MappingPage() {
             </div>
 
             {/* Tab Contents */}
-            <div className="bg-white rounded-2xl shadow-sm border border-[#F2F4F6] overflow-hidden">
+            <div className="bg-white rounded-md shadow-sm border border-[#F2F4F6] overflow-hidden">
 
                 {/* Pending Tab Payload */}
                 {activeTab === 'pending' && (
@@ -332,7 +332,7 @@ export default function MappingPage() {
                                 <AlertCircle className="w-4 h-4 text-[#8B95A1]" /> 지정되지 않은 신규 메뉴 목록
                             </h3>
                             {showNewOnly && (
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold" onClick={() => setShowNewOnly(false)}>
+                                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md text-xs font-bold" onClick={() => setShowNewOnly(false)}>
                                     <ListFilter className="w-3.5 h-3.5" /> 이번주 유입 필터 해제
                                 </button>
                             )}
@@ -379,7 +379,7 @@ export default function MappingPage() {
                                                             placeholder="예: 클래식버거"
                                                             value={drf.normalized_name || ''}
                                                             onChange={e => updateDraft(m.provider, m.product_name, 'normalized_name', e.target.value)}
-                                                            className={cn("w-full h-10 px-3 rounded-lg border focus:ring-2 focus:ring-[#3182F6]/20 transition-all font-semibold outline-none",
+                                                            className={cn("w-full h-10 px-3 rounded-md border focus:ring-2 focus:ring-[#3182F6]/20 transition-all font-semibold outline-none",
                                                                 drf.normalized_name ? "border-[#3182F6] bg-blue-50/50 text-[#191F28]" : "border-[#E5E8EB] bg-[#F9FAFB] text-[#4E5968]"
                                                             )}
                                                         />
@@ -390,7 +390,7 @@ export default function MappingPage() {
                                                             placeholder="예: BURG-001"
                                                             value={drf.custom_id || ''}
                                                             onChange={e => updateDraft(m.provider, m.product_name, 'custom_id', e.target.value)}
-                                                            className="w-full h-10 px-3 rounded-lg border border-[#E5E8EB] bg-[#F9FAFB] focus:bg-white focus:border-[#3182F6] transition-all font-medium text-[#4E5968] outline-none placeholder:text-gray-300"
+                                                            className="w-full h-10 px-3 rounded-md border border-[#E5E8EB] bg-[#F9FAFB] focus:bg-white focus:border-[#3182F6] transition-all font-medium text-[#4E5968] outline-none placeholder:text-gray-300"
                                                         />
                                                     </td>
                                                     <td className="px-5 py-4 align-top">
@@ -398,7 +398,7 @@ export default function MappingPage() {
                                                             <select
                                                                 value={drf.is_option ? 'true' : 'false'}
                                                                 onChange={e => updateDraft(m.provider, m.product_name, 'is_option', e.target.value === 'true')}
-                                                                className={cn("w-full h-10 px-3 pr-8 rounded-lg border focus:bg-white transition-all font-medium outline-none appearance-none",
+                                                                className={cn("w-full h-10 px-3 pr-8 rounded-md border focus:bg-white transition-all font-medium outline-none appearance-none",
                                                                     drf.is_option ? "bg-gray-100 border-gray-200 text-gray-600" : "bg-blue-50/50 border-blue-200 text-blue-700"
                                                                 )}
                                                             >
@@ -412,7 +412,7 @@ export default function MappingPage() {
                                                         <button
                                                             onClick={() => handleSaveSingle(m.provider, m.product_name)}
                                                             disabled={!drf.normalized_name || isSaving}
-                                                            className="h-10 px-4 bg-[#191F28] hover:bg-[#4E5968] text-white rounded-lg font-semibold transition-colors disabled:opacity-30 disabled:hover:bg-[#191F28] flex items-center gap-1.5 ml-auto"
+                                                            className="h-10 px-4 bg-[#191F28] hover:bg-[#4E5968] text-white rounded-md font-semibold transition-colors disabled:opacity-30 disabled:hover:bg-[#191F28] flex items-center gap-1.5 ml-auto"
                                                         >
                                                             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                                             확정
@@ -478,7 +478,7 @@ export default function MappingPage() {
                                                                 type="text"
                                                                 value={drf.normalized_name || ''}
                                                                 onChange={e => updateDraft(m.provider, m.original_name, 'normalized_name', e.target.value)}
-                                                                className="w-full h-10 px-3 border border-[#3182F6] rounded-lg font-bold outline-none"
+                                                                className="w-full h-10 px-3 border border-[#3182F6] rounded-md font-bold outline-none"
                                                             />
                                                         </td>
                                                         <td className="px-5 py-4 align-top">
@@ -486,7 +486,7 @@ export default function MappingPage() {
                                                                 type="text"
                                                                 value={drf.custom_id || ''}
                                                                 onChange={e => updateDraft(m.provider, m.original_name, 'custom_id', e.target.value)}
-                                                                className="w-full h-10 px-3 border border-gray-300 rounded-lg outline-none font-medium"
+                                                                className="w-full h-10 px-3 border border-gray-300 rounded-md outline-none font-medium"
                                                             />
                                                         </td>
                                                         <td className="px-5 py-4 align-top">
@@ -494,7 +494,7 @@ export default function MappingPage() {
                                                                 <select
                                                                     value={drf.is_option ? 'true' : 'false'}
                                                                     onChange={e => updateDraft(m.provider, m.original_name, 'is_option', e.target.value === 'true')}
-                                                                    className="w-full h-10 px-3 pr-8 rounded-lg border border-gray-300 outline-none appearance-none"
+                                                                    className="w-full h-10 px-3 pr-8 rounded-md border border-gray-300 outline-none appearance-none"
                                                                 >
                                                                     <option value="false">메인 메뉴</option>
                                                                     <option value="true">기타 옵션</option>

@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
                     <p className="text-[#8B95A1] font-medium">데이터에 기반한 비즈니스 의사결정을 위한 다차원 분석.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center bg-white border border-[#E5E8EB] rounded-xl px-3 py-2 shadow-sm font-medium text-sm text-[#4E5968] gap-2">
+                    <div className="flex items-center bg-white border border-[#E5E8EB] rounded-md px-3 py-2 shadow-sm font-medium text-sm text-[#4E5968] gap-2">
                         <CalendarRange className="w-4 h-4 text-[#8B95A1]" />
                         <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="outline-none bg-transparent" />
                         <span>~</span>
@@ -134,7 +134,7 @@ export default function AnalyticsPage() {
 
                     <button
                         onClick={() => fetchAnalytics(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-md font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm"
                     >
                         <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
                         업데이트
@@ -148,7 +148,7 @@ export default function AnalyticsPage() {
                     <p className="text-[#8B95A1]">심층 분석 데이터를 처리 중입니다...</p>
                 </div>
             ) : !data || data.totalRevenue === 0 ? (
-                <div className="bg-white rounded-2xl border border-[#F2F4F6] p-16 text-center shadow-sm">
+                <div className="bg-white rounded-md border border-[#F2F4F6] p-16 text-center shadow-sm">
                     <TrendingUp className="w-12 h-12 text-[#D1D6DB] mx-auto mb-4" />
                     <h3 className="text-lg font-bold text-[#191F28] mb-2">분석할 데이터가 없습니다</h3>
                     <p className="text-[#8B95A1]">선택한 기간 내에 결제 데이터가 존재하지 않습니다.<br />우측 상단 날짜를 변경해보세요.</p>
@@ -156,7 +156,7 @@ export default function AnalyticsPage() {
             ) : (
                 <>
                     {/* Revenue Trend Chart */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-[#F2F4F6] p-6">
+                    <div className="bg-white rounded-md shadow-sm border border-[#F2F4F6] p-6">
                         <div className="flex items-center gap-2 mb-6">
                             <BarChart3 className="w-5 h-5 text-[#3182F6]" />
                             <h3 className="text-lg font-bold text-[#191F28]">일별 매출 및 주문수 추세</h3>
@@ -182,7 +182,7 @@ export default function AnalyticsPage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Heatmap */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-[#F2F4F6] p-6">
+                        <div className="bg-white rounded-md shadow-sm border border-[#F2F4F6] p-6">
                             <div className="flex items-start justify-between mb-6">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
@@ -197,7 +197,7 @@ export default function AnalyticsPage() {
 
                         {/* Pie Charts */}
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-white rounded-2xl shadow-sm border border-[#F2F4F6] p-5 flex flex-col items-center justify-center">
+                            <div className="bg-white rounded-md shadow-sm border border-[#F2F4F6] p-5 flex flex-col items-center justify-center">
                                 <h4 className="text-sm font-bold text-[#4E5968] mb-4 text-left w-full">결제 수단 비중</h4>
                                 <div className="h-[200px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -212,7 +212,7 @@ export default function AnalyticsPage() {
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-2xl shadow-sm border border-[#F2F4F6] p-5 flex flex-col items-center justify-center">
+                            <div className="bg-white rounded-md shadow-sm border border-[#F2F4F6] p-5 flex flex-col items-center justify-center">
                                 <h4 className="text-sm font-bold text-[#4E5968] mb-4 text-left w-full">주문 채널 비중</h4>
                                 <div className="h-[200px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -230,7 +230,7 @@ export default function AnalyticsPage() {
                     </div>
 
                     {/* ABC Analysis */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-[#F2F4F6] overflow-hidden">
+                    <div className="bg-white rounded-md shadow-sm border border-[#F2F4F6] overflow-hidden">
                         <div className="px-6 py-5 border-b border-[#F2F4F6] flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Utensils className="w-5 h-5 text-[#00C471]" />

@@ -89,7 +89,7 @@ export default function LogsPage() {
                 <div className="flex gap-3">
                     <button
                         onClick={() => fetchLogs(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-md font-semibold hover:bg-[#F2F4F6] transition-colors shadow-sm"
                     >
                         <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
                         새로고침
@@ -97,7 +97,7 @@ export default function LogsPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-[#F2F4F6] overflow-hidden">
+            <div className="bg-white rounded-md shadow-sm border border-[#F2F4F6] overflow-hidden">
                 <div className="px-6 py-5 border-b border-[#F2F4F6] bg-[#F9FAFB]">
                     <h3 className="text-sm font-bold text-[#4E5968]">전체 로그 내역 ({logs.length}건)</h3>
                 </div>

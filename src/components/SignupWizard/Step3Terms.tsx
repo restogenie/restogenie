@@ -50,7 +50,7 @@ export function Step3Terms({ formData, updateFormData, onSubmit, onPrev }: Props
                 <CardDescription>서비스 이용을 위한 중요 약관에 동의해주세요.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
-                <div className="flex items-center space-x-3 bg-secondary/30 p-4 rounded-lg border border-border">
+                <div className="flex items-center space-x-3 bg-secondary/30 p-4 rounded-md border border-border">
                     <Checkbox
                         id="all"
                         checked={isAllChecked}

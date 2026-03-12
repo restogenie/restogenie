@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getUserFromSession } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { decrypt } from "@/lib/encryption";
 
 export async function POST(request: Request) {
     const user = await getUserFromSession();
@@ -32,9 +33,19 @@ export async function POST(request: Request) {
             return NextResponse.json({ detail: "Forbidden access to this store" }, { status: 403 });
         }
 
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            return NextResponse.json({ detail: "GEMINI_API_KEY 환경변수가 설정되지 않아 AI 기능을 사용할 수 없습니다." }, { status: 500 });
+        const aiKeyRecord = await prisma.aiApiKey.findFirst({
+            where: { user_id: user.id, engine: "GEMINI", is_active: true }
+        });
+
+        if (!aiKeyRecord) {
+            return NextResponse.json({ detail: "AI API 키가 등록되지 않았습니다. 설정 > API 연동 환경에서 Gemini API Key를 등록해주세요." }, { status: 400 });
+        }
+
+        let apiKey = "";
+        try {
+            apiKey = decrypt(aiKeyRecord.encrypted_key);
+        } catch (e) {
+            return NextResponse.json({ detail: "API 키 복호화에 실패했습니다. 키를 다시 등록해주세요." }, { status: 500 });
         }
 
         // 1. Find up to 50 unmapped unique items

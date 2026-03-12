@@ -132,7 +132,7 @@ export function StepThreeSchedule({ onPrev, onComplete, posType = 'payhere' }: S
                 <button
                     onClick={handleManualSync}
                     disabled={isSyncing || syncStatus === 'success'}
-                    className={`flex items-center gap-2 px-8 py-3 rounded-xl font-semibold text-white transition-all shadow-md
+                    className={`flex items-center gap-2 px-8 py-3 rounded-md font-semibold text-white transition-all shadow-md
             ${syncStatus === 'success'
                             ? 'bg-[#00C471] hover:bg-[#00C471]'
                             : syncStatus === 'error'

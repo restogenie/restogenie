@@ -77,20 +77,26 @@ export function StepOneConnector({ onNext }: StepOneProps) {
             // 1. Save Connection
             setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Connecting to database to save POS credentials...", level: "INFO" }]);
 
-            await axios.post("/api/v1/business/connection", {
-                store_id: currentStore.id,
-                vendor: vendor,
-                auth_code_1: payloadAuth1,
-                auth_code_2: payloadAuth2,
-                auth_code_3: payloadAuth3,
-            });
+            if (vendor === 'mayi') {
+                await axios.post("/api/v1/business/cctv", {
+                    store_id: currentStore.id
+                });
+            } else {
+                await axios.post("/api/v1/business/connection", {
+                    store_id: currentStore.id,
+                    vendor: vendor,
+                    auth_code_1: payloadAuth1,
+                    auth_code_2: payloadAuth2,
+                    auth_code_3: payloadAuth3,
+                });
+            }
 
             setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: `Successfully saved ${vendor} credentials for Store ID: ${currentStore.id}.`, level: "INFO" }]);
-            if (["baemin", "coupangeats", "yogiyo"].includes(vendor)) {
+            if (["baemin", "coupangeats", "yogiyo", "mayi"].includes(vendor)) {
                 // Background Sync Path: Exit early and let dashboard monitor 'sync_status'
                 setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Background crawling task deployed safely. Tracking sync status asynchronously.", level: "INFO" }]);
                 setIsSuccess(true);
-                toast.success(`${vendor} 연동이 백그라운드에서 시작되었습니다. 대시보드에서 상태를 확인하세요.`);
+                toast.success(`${vendor === 'mayi' ? 'CCTV' : vendor} 연동이 등록되었습니다. 데이터 동기화는 백그라운드에서 진행됩니다.`);
                 setTimeout(() => onNext(vendor), 2500);
             } else {
                 // Real-time API Sync Path
@@ -144,6 +150,9 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                             <SelectItem value="baemin" className="text-blue-600 font-bold border-t border-gray-100 mt-2">배달의민족 (사장님광장)</SelectItem>
                             <SelectItem value="coupangeats" className="text-blue-600 font-bold">쿠팡이츠 (사장님포털)</SelectItem>
                             <SelectItem value="yogiyo" className="text-blue-600 font-bold">요기요 (사장님사이트)</SelectItem>
+                            
+                            {/* Analytics and BI */}
+                            <SelectItem value="mayi" className="text-indigo-600 font-bold border-t border-gray-100 mt-2">May-I (CCTV 유동인구 분석)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -153,6 +162,15 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                         <div className="space-y-2">
                             <Label htmlFor="api_key">API Key</Label>
                             <Input id="api_key" placeholder="페이히어 발급 API Key를 입력하세요" value={authCode1} onChange={e => setAuthCode1(e.target.value)} disabled={isLoading || isSuccess} />
+                        </div>
+                    </div>
+                )}
+
+                {vendor === "mayi" && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="mayi_api_key">May-I API Key</Label>
+                            <Input id="mayi_api_key" placeholder="메이아이 API 인증키" value={authCode1} onChange={e => setAuthCode1(e.target.value)} disabled={isLoading || isSuccess} />
                         </div>
                     </div>
                 )}
@@ -218,7 +236,7 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                 )}
 
                 {isLoading && (
-                    <div className="mt-8 overflow-hidden rounded-xl border border-gray-800 bg-[#0A0A0A] shadow-2xl animate-in slide-in-from-bottom-6 duration-500">
+                    <div className="mt-8 overflow-hidden rounded-md border border-gray-800 bg-[#0A0A0A] shadow-2xl animate-in slide-in-from-bottom-6 duration-500">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-[#141414]">
                             <div className="flex items-center gap-2">
                                 <Terminal className="w-4 h-4 text-gray-400" />
@@ -240,7 +258,16 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                                 </div>
                             ))}
                             <div ref={logsEndRef} />
-                            {!isSuccess && (
+                            {vendor === "mayi" && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 p-4 rounded-lg bg-indigo-50 border border-indigo-100">
+                        <div className="space-y-2">
+                            <h3 className="font-semibold text-indigo-800">CCTV 연동 안내</h3>
+                            <p className="text-sm text-indigo-700">May-I API 시스템 연동을 위해 Restogenie 통합 계정을 사용합니다. 특별한 인증키를 입력할 필요가 없습니다. [연동 테스트 및 저장] 버튼을 누르면 연동이 활성화됩니다.</p>
+                        </div>
+                    </div>
+                )}
+
+                {!isSuccess && (
                                 <div className="flex gap-3 py-1 items-center">
                                     <span className="text-gray-500 shrink-0">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
                                     <span className="text-gray-400 flex items-center gap-2">

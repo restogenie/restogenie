@@ -20,12 +20,31 @@ export default function PosConnectionsTab() {
             if (!currentStore) return;
             setIsLoading(true);
             try {
-                // Fetch the POS connections explicitly via a new API we will build
-                const response = await fetch(`/api/v1/business/connection?store_id=${currentStore.id}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setConnections(data.connections || []);
+                const [posRes, cctvRes] = await Promise.all([
+                    fetch(`/api/v1/business/connection?store_id=${currentStore.id}`),
+                    fetch(`/api/v1/business/cctv?store_id=${currentStore.id}`)
+                ]);
+
+                let allConnections: any[] = [];
+                
+                if (posRes.ok) {
+                    const data = await posRes.json();
+                    allConnections = allConnections.concat(data.connections || []);
                 }
+                
+                if (cctvRes.ok) {
+                    const data = await cctvRes.json();
+                    const cctvConnections = (data.connections || []).map((c: any) => ({
+                        ...c,
+                        vendor: 'mayi',
+                        auth_code_1: 'SYSTEM_LINKED',
+                        auth_code_2: null,
+                        auth_code_3: null
+                    }));
+                    allConnections = allConnections.concat(cctvConnections);
+                }
+
+                setConnections(allConnections);
             } catch (e) {
                 console.error("Failed to load connections", e);
             } finally {
@@ -40,9 +59,11 @@ export default function PosConnectionsTab() {
         if (!confirm(`정말로 ${vendor} 연동을 해제하시겠습니까? 연결된 API 자격 증명이 완전히 삭제되며 복구할 수 없습니다.`)) return;
 
         try {
-            const res = await fetch(`/api/v1/business/connection?id=${id}&store_id=${currentStore?.id}`, {
-                method: "DELETE"
-            });
+            const deleteUrl = vendor === 'mayi' 
+                ? `/api/v1/business/cctv?store_id=${currentStore?.id}`
+                : `/api/v1/business/connection?id=${id}&store_id=${currentStore?.id}`;
+                
+            const res = await fetch(deleteUrl, { method: "DELETE" });
             if (res.ok) {
                 toast.success(`${vendor} 연동이 해제되었습니다.`);
                 setConnections(prev => prev.filter(c => c.id !== id));
@@ -78,12 +99,12 @@ export default function PosConnectionsTab() {
             </div>
 
             {isLoading ? (
-                <div className="flex justify-center flex-col items-center py-20 gap-4 border border-[#E5E8EB] rounded-xl bg-[#F9FAFB]">
+                <div className="flex justify-center flex-col items-center py-20 gap-4 border border-[#E5E8EB] rounded-md bg-[#F9FAFB]">
                     <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
                     <p className="text-sm text-gray-500">연동 내역을 불러오는 중...</p>
                 </div>
             ) : connections.length === 0 ? (
-                <div className="flex justify-center flex-col items-center py-20 gap-4 border border-[#E5E8EB] rounded-xl bg-[#F9FAFB] border-dashed">
+                <div className="flex justify-center flex-col items-center py-20 gap-4 border border-[#E5E8EB] rounded-md bg-[#F9FAFB] border-dashed">
                     <Unplug className="w-10 h-10 text-gray-300" />
                     <p className="font-semibold text-[#333D4B]">연동된 POS 자격 증명이 없습니다.</p>
                     <p className="text-sm text-[#8B95A1]">우측 상단의 "신규 연동 추가" 버튼을 눌러 연동을 시작하세요.</p>
@@ -107,7 +128,7 @@ export default function PosConnectionsTab() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="pt-4 space-y-4">
-                                <div className="bg-[#F9FAFB] p-3 rounded-lg border border-[#E5E8EB] space-y-2">
+                                <div className="bg-[#F9FAFB] p-3 rounded-md border border-[#E5E8EB] space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-[#8B95A1] font-medium">Auth Key 1</span>
                                         <span className="font-mono text-[#333D4B] truncate w-[150px] text-right">

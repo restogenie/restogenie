@@ -39,13 +39,14 @@ export function ClientHeader() {
     return (
         <header className="fixed top-0 w-full h-16 bg-white/80 backdrop-blur-md border-b border-[#F2F4F6] z-50 px-4 md:px-6 flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0">
+                <div className="w-8 h-8 rounded-md bg-blue-600 flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0">
                     R
                 </div>
                 <span className="font-bold text-lg tracking-tight mr-2 md:mr-6 hidden sm:block">RestoGenie</span>
                 <nav className="flex items-center gap-4 md:gap-6 sm:border-l border-[#F2F4F6] sm:pl-6 h-6 overflow-x-auto custom-scrollbar no-scrollbar whitespace-nowrap mask-linear-fade">
                     <a href="/dashboard" className="text-sm font-bold text-[#191F28] hover:text-[#3182F6] transition-colors">대시보드</a>
                     <a href="/dashboard/analytics" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors hidden md:block">심층 분석</a>
+                    <a href="/dashboard/traffic" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors hidden md:block">유동인구 분석</a>
                     <a href="/mapping" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">메뉴 맵핑</a>
                     <a href="/logs" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors hidden sm:block">시스템 로그</a>
                     <a href="/billing" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors hidden lg:block">구독 관리</a>
@@ -88,7 +89,7 @@ export function ClientHeader() {
                     </Select>
                 )}
 
-                <a href="/setup" className="hidden md:flex flex-shrink-0 px-4 py-2 bg-[#191F28] text-white text-sm font-medium rounded-lg hover:bg-[#333D4B] transition-colors shadow-sm">
+                <a href="/setup" className="hidden md:flex flex-shrink-0 px-4 py-2 bg-[#191F28] text-white text-sm font-medium rounded-md hover:bg-[#333D4B] transition-colors shadow-sm">
                     + 신규 API 설정
                 </a>
 
@@ -96,7 +97,7 @@ export function ClientHeader() {
                     <DropdownMenuTrigger className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors outline-none cursor-pointer" title="설정">
                         <Settings className="w-5 h-5" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl shadow-lg border-[#E5E8EB]">
+                    <DropdownMenuContent align="end" className="w-56 mt-2 rounded-md shadow-lg border-[#E5E8EB]">
                         <DropdownMenuLabel className="font-semibold text-[#191F28] py-2">설정 및 메뉴</DropdownMenuLabel>
                         <DropdownMenuSeparator className="bg-[#F2F4F6]" />
                         <DropdownMenuItem className="cursor-pointer py-2.5 hover:bg-[#F2F4F6]" onClick={() => router.push("/settings?tab=personal")}>

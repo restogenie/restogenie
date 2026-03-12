@@ -99,7 +99,7 @@ export function AddStoreModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
     return (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 min-h-screen bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-8 duration-300 my-auto">
+            <div className="bg-white rounded-md shadow-xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-8 duration-300 my-auto">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                     <h2 className="text-xl font-bold text-gray-900">신규 사업장 추가</h2>
                     <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">

@@ -10,7 +10,7 @@ export default function LandingPage() {
       <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-[#F2F4F6]">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between max-w-7xl">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#3182F6] flex items-center justify-center font-bold text-white shadow-sm">
+            <div className="w-8 h-8 rounded-md bg-[#3182F6] flex items-center justify-center font-bold text-white shadow-sm">
               R
             </div>
             <span className="font-bold text-xl tracking-tight">RestoGenie</span>
@@ -26,7 +26,7 @@ export default function LandingPage() {
             <Link href="/login" className="text-[15px] font-medium text-[#4E5968] hover:text-[#191F28] transition-colors hidden sm:block">
               로그인
             </Link>
-            <Link href="/signup" className="bg-[#3182F6] hover:bg-[#1b64da] text-white text-[15px] font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm">
+            <Link href="/signup" className="bg-[#3182F6] hover:bg-[#1b64da] text-white text-[15px] font-semibold px-5 py-2.5 rounded-md transition-all shadow-sm">
               무료로 시작하기
             </Link>
           </div>
@@ -51,7 +51,7 @@ export default function LandingPage() {
             프랜차이즈 점주님을 위한 최적의 다중 매장 데이터 솔루션. 페이히어, 이지포스, 스마트로 등 어떤 포스기를 쓰더라도 클라우드에서 손쉽게 데이터를 통합합니다.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/signup" className="w-full sm:w-auto bg-[#3182F6] hover:bg-[#1b64da] text-white text-lg font-semibold px-8 py-4 rounded-2xl transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2">
+            <Link href="/signup" className="w-full sm:w-auto bg-[#3182F6] hover:bg-[#1b64da] text-white text-lg font-semibold px-8 py-4 rounded-md transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2">
               지금 무료로 시작하기 <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
@@ -68,8 +68,8 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#F2F4F6] hover:-translate-y-1 transition-transform duration-300">
-              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+            <div className="bg-white p-8 rounded-md shadow-sm border border-[#F2F4F6] hover:-translate-y-1 transition-transform duration-300">
+              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-md flex items-center justify-center mb-6">
                 <Cloud className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-[#191F28] mb-3">서버리스 자동 동기화</h3>
@@ -79,8 +79,8 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#F2F4F6] hover:-translate-y-1 transition-transform duration-300">
-              <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
+            <div className="bg-white p-8 rounded-md shadow-sm border border-[#F2F4F6] hover:-translate-y-1 transition-transform duration-300">
+              <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-md flex items-center justify-center mb-6">
                 <LayoutDashboard className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-[#191F28] mb-3">다중 사업장 스위칭</h3>
@@ -90,8 +90,8 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#F2F4F6] hover:-translate-y-1 transition-transform duration-300">
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6">
+            <div className="bg-white p-8 rounded-md shadow-sm border border-[#F2F4F6] hover:-translate-y-1 transition-transform duration-300">
+              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-md flex items-center justify-center mb-6">
                 <BarChart3 className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-[#191F28] mb-3">이기종 POS 데이터 통합</h3>
@@ -113,7 +113,7 @@ export default function LandingPage() {
           <p className="text-[#B0B8C1] text-lg sm:text-xl mb-10 max-w-xl mx-auto relative z-10">
             복잡한 하드코딩 매핑이나 VPN 설정이 필요 없습니다. 안전한 클라우드에서 단 5분 만에 연동을 마칠 수 있습니다.
           </p>
-          <Link href="/signup" className="inline-flex bg-white hover:bg-gray-100 text-[#191F28] text-lg font-semibold px-8 py-4 rounded-2xl transition-colors relative z-10 items-center gap-2">
+          <Link href="/signup" className="inline-flex bg-white hover:bg-gray-100 text-[#191F28] text-lg font-semibold px-8 py-4 rounded-md transition-colors relative z-10 items-center gap-2">
             가입하고 매장 등록하기
           </Link>
         </div>

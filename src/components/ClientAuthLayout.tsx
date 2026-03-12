@@ -3,6 +3,7 @@
 import React from 'react';
 import { StoreProvider } from '@/lib/StoreContext';
 import { ClientHeader } from '@/components/ClientHeader';
+import FloatingChatAgent from '@/components/FloatingChatAgent';
 
 export default function ClientAuthLayout({
     children,
@@ -16,6 +17,7 @@ export default function ClientAuthLayout({
                 <main className="pt-24 pb-12 px-6 max-w-7xl mx-auto">
                     {children}
                 </main>
+                <FloatingChatAgent />
             </div>
         </StoreProvider>
     );

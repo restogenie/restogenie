@@ -23,7 +23,7 @@ export default function Home() {
     <div className="min-h-screen bg-transparent font-sans selection:bg-primary/20">
 
       <main className="container mx-auto py-10 px-4 max-w-6xl">
-        <div className="mb-8 p-6 bg-white rounded-xl shadow-sm border border-border">
+        <div className="mb-8 p-6 bg-white rounded-md shadow-sm border border-border">
           <h1 className="text-3xl font-bold tracking-tight mb-2 text-foreground">다중 POS 데이터 연동</h1>
           <p className="text-muted-foreground">이기종 POS 결제 데이터를 수집하고 앱의 표준 스키마에 맞게 매핑합니다.</p>
         </div>

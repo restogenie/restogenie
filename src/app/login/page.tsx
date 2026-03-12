@@ -60,7 +60,7 @@ export default function LoginPage() {
     return (
         <div className="flex min-h-screen w-full items-center justify-center bg-[#F2F4F6] p-4 flex-col gap-6">
             <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-[#3182F6] text-white font-bold flex items-center justify-center rounded-xl mb-3 shadow-sm text-xl">
+                <div className="w-12 h-12 bg-[#3182F6] text-white font-bold flex items-center justify-center rounded-md mb-3 shadow-sm text-xl">
                     R
                 </div>
                 <h1 className="text-xl font-bold text-[#191F28]">RestoGenie</h1>
@@ -83,7 +83,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="h-[52px] px-4 rounded-xl bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-[#3182F6]/30 text-[15px]"
+                                className="h-[52px] px-4 rounded-md bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-[#3182F6]/30 text-[15px]"
                             />
                             <Input
                                 id="password"
@@ -92,13 +92,13 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="h-[52px] px-4 rounded-xl bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-[#3182F6]/30 text-[15px]"
+                                className="h-[52px] px-4 rounded-md bg-[#F9FAFB] border-[#E5E8EB] focus-visible:ring-[#3182F6]/30 text-[15px]"
                             />
                         </div>
                         {error && <p className="text-sm text-red-500 font-medium text-center">{error}</p>}
                         <Button
                             type="submit"
-                            className="w-full h-[52px] rounded-xl bg-[#3182F6] hover:bg-[#1b64da] text-white font-semibold text-[15px] shadow-sm transition-all mt-2"
+                            className="w-full h-[52px] rounded-md bg-[#3182F6] hover:bg-[#1b64da] text-white font-semibold text-[15px] shadow-sm transition-all mt-2"
                             disabled={loading}
                         >
                             {loading ? "로그인 중..." : "로그인"}
@@ -110,7 +110,7 @@ export default function LoginPage() {
                         아직 계정이 없으신가요?
                     </div>
                     <Link href="/signup" className="w-full">
-                        <Button variant="outline" className="w-full h-[52px] rounded-xl font-semibold text-[#4E5968] border-[#E5E8EB] hover:bg-[#F2F4F6] text-[15px]">
+                        <Button variant="outline" className="w-full h-[52px] rounded-md font-semibold text-[#4E5968] border-[#E5E8EB] hover:bg-[#F2F4F6] text-[15px]">
                             회원가입하기
                         </Button>
                     </Link>

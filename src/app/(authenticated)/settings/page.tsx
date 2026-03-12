@@ -6,6 +6,7 @@ import { User, Store, KeyRound, Loader2 } from "lucide-react";
 import PersonalInfoTab from "@/components/Settings/PersonalInfoTab";
 import BusinessInfoTab from "@/components/Settings/BusinessInfoTab";
 import PosConnectionsTab from "@/components/Settings/PosConnectionsTab";
+import AiKeysTab from "@/components/Settings/AiKeysTab";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 
@@ -17,7 +18,7 @@ function SettingsTabsContent() {
 
     useEffect(() => {
         const tab = searchParams.get("tab");
-        if (tab && ["personal", "business", "connections"].includes(tab)) {
+        if (tab && ["personal", "business", "connections", "ai-keys"].includes(tab)) {
             setActiveTab(tab);
         }
     }, [searchParams]);
@@ -37,22 +38,26 @@ function SettingsTabsContent() {
             </div>
 
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-8 bg-[#F2F4F6] p-1 rounded-xl">
-                    <TabsTrigger value="personal" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#191F28] data-[state=active]:shadow-sm transition-all py-2.5">
+                <TabsList className="grid w-full grid-cols-4 mb-4 bg-[#F2F4F6] p-1 rounded-md">
+                    <TabsTrigger value="personal" className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:text-[#191F28] data-[state=active]:shadow-sm transition-all py-2.5">
                         <User className="w-4 h-4" />
                         <span className="font-semibold text-sm">개인정보 관리</span>
                     </TabsTrigger>
-                    <TabsTrigger value="business" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#191F28] data-[state=active]:shadow-sm transition-all py-2.5">
+                    <TabsTrigger value="business" className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:text-[#191F28] data-[state=active]:shadow-sm transition-all py-2.5">
                         <Store className="w-4 h-4" />
                         <span className="font-semibold text-sm">사업장 정보 관리</span>
                     </TabsTrigger>
-                    <TabsTrigger value="connections" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#191F28] data-[state=active]:shadow-sm transition-all py-2.5">
+                    <TabsTrigger value="connections" className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:text-[#191F28] data-[state=active]:shadow-sm transition-all py-2.5">
                         <KeyRound className="w-4 h-4" />
-                        <span className="font-semibold text-sm">POS 커넥터 관리</span>
+                        <span className="font-semibold text-sm hidden sm:inline">POS 커넥터</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="ai-keys" className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:text-[#191F28] data-[state=active]:shadow-sm transition-all py-2.5">
+                        <User className="w-4 h-4 text-indigo-500" />
+                        <span className="font-semibold text-sm hidden sm:inline">AI Keys 관리</span>
                     </TabsTrigger>
                 </TabsList>
 
-                <div className="bg-white border border-[#E5E8EB] rounded-2xl p-6 md:p-8 shadow-sm">
+                <div className="bg-white border border-[#E5E8EB] rounded-md p-6 md:p-8 shadow-sm">
                     <TabsContent value="personal" className="mt-0 focus-visible:outline-none">
                         <PersonalInfoTab />
                     </TabsContent>
@@ -63,6 +68,10 @@ function SettingsTabsContent() {
 
                     <TabsContent value="connections" className="mt-0 focus-visible:outline-none">
                         <PosConnectionsTab />
+                    </TabsContent>
+
+                    <TabsContent value="ai-keys" className="mt-0 focus-visible:outline-none">
+                        <AiKeysTab />
                     </TabsContent>
                 </div>
             </Tabs>

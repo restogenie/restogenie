@@ -14,3 +14,5 @@ export const prisma =
     });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+// Force hot-reload of Prisma Client after schema changes
