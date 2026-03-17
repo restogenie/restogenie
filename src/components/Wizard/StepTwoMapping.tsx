@@ -137,6 +137,35 @@ export function StepTwoMapping({ onNext, onPrev, vendor }: StepTwoProps) {
     const displaySales = salesDetails.slice(0, 3);
     const displayMenus = salesDetails.flatMap(s => s.menu_items || []).slice(0, 3);
 
+    const isBackgroundSyncVendor = ["baemin", "coupangeats", "yogiyo", "mayi"].includes(vendor);
+
+    if (isBackgroundSyncVendor) {
+        return (
+            <Card className="w-full max-w-5xl mx-auto border-border shadow-sm">
+                <CardHeader>
+                    <CardTitle className="text-2xl text-foreground font-bold flex items-center gap-2">
+                        <Database className="h-6 w-6 text-primary" />
+                        2단계: 자동 스키마 맵핑 완료
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground mt-1">
+                        이 데이터 소스는 RestoGenie 표준 스키마 테이블에 <strong>자동으로 맵핑</strong>되므로 수동 지정이 필요하지 않습니다. (자동화 백그라운드 동기화 파이프라인 가동 완료)
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="py-20 flex flex-col items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                        <Database className="h-8 w-8 text-green-600" />
+                    </div>
+                    <p className="font-semibold text-lg text-foreground mb-1">데이터 파이프라인 연결 및 스키마 검증 완료</p>
+                    <p className="text-sm text-muted-foreground mt-2 text-center max-w-md">해당 브랜드의 데이터는 백그라운드 동기화 큐에 안전하게 등록되었으며 실시간 분석이 자동 구성됩니다. <strong>[검증 완료 후 다음]</strong>을 눌러 마무리해주세요.</p>
+                </CardContent>
+                <CardFooter className="flex justify-between pt-4 border-t border-secondary mt-4">
+                    <Button variant="outline" onClick={onPrev}>이전 단계</Button>
+                    <Button onClick={onNext} className="bg-primary hover:bg-primary/90 text-white">검증 완료 및 자동화 스케줄 가동</Button>
+                </CardFooter>
+            </Card>
+        );
+    }
+
     return (
         <Card className="w-full max-w-5xl mx-auto border-border shadow-sm">
             <CardHeader>

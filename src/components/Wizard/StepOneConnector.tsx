@@ -23,6 +23,7 @@ export function StepOneConnector({ onNext }: StepOneProps) {
     const [authCode1, setAuthCode1] = useState("");
     const [authCode2, setAuthCode2] = useState("");
     const [authCode3, setAuthCode3] = useState("");
+    const [authCode4, setAuthCode4] = useState("");
 
     // UI States
     const [isLoading, setIsLoading] = useState(false);
@@ -77,19 +78,14 @@ export function StepOneConnector({ onNext }: StepOneProps) {
             // 1. Save Connection
             setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: "Connecting to database to save POS credentials...", level: "INFO" }]);
 
-            if (vendor === 'mayi') {
-                await axios.post("/api/v1/business/cctv", {
-                    store_id: currentStore.id
-                });
-            } else {
-                await axios.post("/api/v1/business/connection", {
-                    store_id: currentStore.id,
-                    vendor: vendor,
-                    auth_code_1: payloadAuth1,
-                    auth_code_2: payloadAuth2,
-                    auth_code_3: payloadAuth3,
-                });
-            }
+            await axios.post("/api/v1/business/connection", {
+                store_id: currentStore.id,
+                vendor: vendor,
+                auth_code_1: payloadAuth1,
+                auth_code_2: payloadAuth2,
+                auth_code_3: payloadAuth3,
+                auth_code_4: authCode4,
+            });
 
             setLogs(prev => [...prev, { time: new Date().toLocaleTimeString([], { hour12: false }), message: `Successfully saved ${vendor} credentials for Store ID: ${currentStore.id}.`, level: "INFO" }]);
             if (["baemin", "coupangeats", "yogiyo", "mayi"].includes(vendor)) {
@@ -136,7 +132,7 @@ export function StepOneConnector({ onNext }: StepOneProps) {
             <CardContent className="space-y-6">
                 <div className="space-y-2">
                     <Label htmlFor="vendor">POS 브랜드 선택</Label>
-                    <Select onValueChange={(val) => { setVendor(val); setAuthCode1(""); setAuthCode2(""); setAuthCode3(""); }} value={vendor} disabled={isLoading || isSuccess}>
+                    <Select onValueChange={(val) => { setVendor(val); setAuthCode1(""); setAuthCode2(""); setAuthCode3(""); setAuthCode4(""); }} value={vendor} disabled={isLoading || isSuccess}>
                         <SelectTrigger id="vendor" className="w-full">
                             <SelectValue placeholder="POS 브랜드를 선택하세요" />
                         </SelectTrigger>
@@ -169,8 +165,20 @@ export function StepOneConnector({ onNext }: StepOneProps) {
                 {vendor === "mayi" && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
                         <div className="space-y-2">
-                            <Label htmlFor="mayi_api_key">May-I API Key</Label>
-                            <Input id="mayi_api_key" placeholder="메이아이 API 인증키" value={authCode1} onChange={e => setAuthCode1(e.target.value)} disabled={isLoading || isSuccess} />
+                            <Label htmlFor="mayi_email">May-I 계정 이메일</Label>
+                            <Input id="mayi_email" type="email" placeholder="예: user@example.com" value={authCode1} onChange={e => setAuthCode1(e.target.value)} disabled={isLoading || isSuccess} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="mayi_pw">May-I 계정 비밀번호</Label>
+                            <Input id="mayi_pw" type="password" placeholder="비밀번호를 입력하세요" value={authCode2} onChange={e => setAuthCode2(e.target.value)} disabled={isLoading || isSuccess} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="mayi_db_id">대시보드 ID</Label>
+                            <Input id="mayi_db_id" placeholder="예: cf82efb5-a312..." value={authCode3} onChange={e => setAuthCode3(e.target.value)} disabled={isLoading || isSuccess} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="mayi_store_id">해당 매장 ID (UUID 형식)</Label>
+                            <Input id="mayi_store_id" placeholder="예: 9bdd9fbe-4c4b..." value={authCode4} onChange={e => setAuthCode4(e.target.value)} disabled={isLoading || isSuccess} required />
                         </div>
                     </div>
                 )}

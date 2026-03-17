@@ -39,7 +39,8 @@ export default function PosConnectionsTab() {
                         vendor: 'mayi',
                         auth_code_1: 'SYSTEM_LINKED',
                         auth_code_2: null,
-                        auth_code_3: null
+                        auth_code_3: null,
+                        is_legacy_cctv: true
                     }));
                     allConnections = allConnections.concat(cctvConnections);
                 }
@@ -55,11 +56,11 @@ export default function PosConnectionsTab() {
         fetchConnections();
     }, [currentStore]);
 
-    const handleDeleteConnection = async (id: number, vendor: string) => {
+    const handleDeleteConnection = async (id: number, vendor: string, is_legacy_cctv?: boolean) => {
         if (!confirm(`정말로 ${vendor} 연동을 해제하시겠습니까? 연결된 API 자격 증명이 완전히 삭제되며 복구할 수 없습니다.`)) return;
 
         try {
-            const deleteUrl = vendor === 'mayi' 
+            const deleteUrl = is_legacy_cctv
                 ? `/api/v1/business/cctv?store_id=${currentStore?.id}`
                 : `/api/v1/business/connection?id=${id}&store_id=${currentStore?.id}`;
                 
@@ -135,7 +136,7 @@ export default function PosConnectionsTab() {
                                             {conn.auth_code_1 ? '*'.repeat(8) + conn.auth_code_1.slice(-4) : '없음'}
                                         </span>
                                     </div>
-                                    {(conn.auth_code_2 || conn.vendor === 'smartro' || conn.vendor === 'easypos') && (
+                                    {(conn.auth_code_2 || ['smartro', 'easypos', 'mayi', 'baemin', 'coupangeats', 'yogiyo'].includes(conn.vendor)) && (
                                         <div className="flex justify-between text-sm">
                                             <span className="text-[#8B95A1] font-medium">Auth Key 2</span>
                                             <span className="font-mono text-[#333D4B] truncate w-[150px] text-right">
@@ -143,11 +144,19 @@ export default function PosConnectionsTab() {
                                             </span>
                                         </div>
                                     )}
-                                    {(conn.auth_code_3 || conn.vendor === 'smartro') && (
+                                    {(conn.auth_code_3 || ['smartro', 'mayi'].includes(conn.vendor)) && (
                                         <div className="flex justify-between text-sm">
                                             <span className="text-[#8B95A1] font-medium">Auth Key 3</span>
                                             <span className="font-mono text-[#333D4B] truncate w-[150px] text-right">
                                                 {conn.auth_code_3 || '없음'}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {(conn.auth_code_4 || ['mayi'].includes(conn.vendor)) && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-[#8B95A1] font-medium">Auth Key 4 (Store ID)</span>
+                                            <span className="font-mono text-[#333D4B] truncate w-[150px] text-right">
+                                                {conn.auth_code_4 || '없음'}
                                             </span>
                                         </div>
                                     )}
@@ -158,7 +167,7 @@ export default function PosConnectionsTab() {
                                         variant="ghost"
                                         size="sm"
                                         className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                        onClick={() => handleDeleteConnection(conn.id, conn.vendor)}
+                                        onClick={() => handleDeleteConnection(conn.id, conn.vendor, conn.is_legacy_cctv)}
                                     >
                                         <Trash2 className="w-4 h-4 mr-2" />
                                         연동 해제 및 삭제

@@ -82,6 +82,46 @@ export async function GET(request: Request) {
             visitors: timeMatrix[hour]
         }));
 
+        // Day/Hour Heatmap Matrix
+        const heatmapMatrix: Record<number, Record<number, number>> = {};
+        for (let d = 0; d < 7; d++) {
+            heatmapMatrix[d] = {};
+            for (let h = 0; h < 24; h++) heatmapMatrix[d][h] = 0;
+        }
+
+        let totalVisitsForHeatmap = 0;
+
+        traffics.filter((t: any) => t.widget_name === "매장 방문").forEach((t: any) => {
+            if (t.visit_date && t.visit_time) {
+                // Determine day of week from visit_date (0=Sun, 1=Mon, ..., 6=Sat)
+                // Assuming visit_date is stored safely and getUTCDay works (or getDay())
+                const dayOfWeek = t.visit_date.getUTCDay();
+                
+                const hourStr = t.visit_time.split(':')[0];
+                const hourNum = parseInt(hourStr, 10);
+
+                if (!isNaN(hourNum) && hourNum >= 0 && hourNum < 24) {
+                    heatmapMatrix[dayOfWeek][hourNum] += t.visit_count;
+                    totalVisitsForHeatmap += t.visit_count;
+                }
+            }
+        });
+
+        const dayHourHeatmap: any[] = [];
+        const days = ['일', '월', '화', '수', '목', '금', '토'];
+        for (let d = 0; d < 7; d++) {
+            for (let h = 0; h < 24; h++) {
+                if (heatmapMatrix[d][h] > 0) {
+                    dayHourHeatmap.push({
+                        dayIndex: d,
+                        dayName: days[d],
+                        hour: h,
+                        visitors: heatmapMatrix[d][h]
+                    });
+                }
+            }
+        }
+
         // Age & Gender Matrix
         const demoMatrix: Record<string, any> = {};
         traffics.filter((t: any) => t.widget_name === "매장 방문" && t.age_group && t.gender).forEach((t: any) => {
@@ -103,7 +143,9 @@ export async function GET(request: Request) {
                 sales: salesCount
             },
             timeData,
-            demoData
+            demoData,
+            dayHourHeatmap,
+            totalVisitsForHeatmap
         });
 
     } catch (e: any) {

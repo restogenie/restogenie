@@ -74,6 +74,7 @@ model PosConnection {
   auth_code_1 String?
   auth_code_2 String?
   auth_code_3 String?
+  auth_code_4 String?
   is_active   Boolean  @default(true)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt

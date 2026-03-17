@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma as db } from "@/lib/db";
 import { getUserFromSession } from "@/lib/auth";
+import { encrypt } from "@/lib/encryption";
 
 export async function GET(request: Request) {
     try {
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json().catch(() => ({}));
-        const { store_id, vendor, auth_code_1, auth_code_2, auth_code_3 } = body;
+        const { store_id, vendor, auth_code_1, auth_code_2, auth_code_3, auth_code_4 } = body;
 
         if (!store_id || !vendor) {
             return NextResponse.json({ detail: "Store ID and Vendor are required" }, { status: 400 });
@@ -104,6 +105,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ detail: "Store not found or unauthorized" }, { status: 403 });
         }
 
+        // Apply encryption for sensitive May-I credentials
+        let finalAuth1 = auth_code_1 || null;
+        let finalAuth2 = auth_code_2 || null;
+
+        if (vendor === 'mayi') {
+             if (auth_code_1) finalAuth1 = encrypt(auth_code_1);
+             if (auth_code_2) finalAuth2 = encrypt(auth_code_2);
+        }
+
         const upsertedConnection = await db.posConnection.upsert({
             where: {
                 store_id_vendor: {
@@ -112,18 +122,20 @@ export async function POST(request: Request) {
                 }
             },
             update: {
-                auth_code_1: auth_code_1 || null,
-                auth_code_2: auth_code_2 || null,
+                auth_code_1: finalAuth1,
+                auth_code_2: finalAuth2,
                 auth_code_3: auth_code_3 || null,
+                auth_code_4: auth_code_4 || null,
                 is_active: true,
                 sync_status: "PENDING"
             },
             create: {
                 store_id: parseInt(store_id),
                 vendor: vendor,
-                auth_code_1: auth_code_1 || null,
-                auth_code_2: auth_code_2 || null,
+                auth_code_1: finalAuth1,
+                auth_code_2: finalAuth2,
                 auth_code_3: auth_code_3 || null,
+                auth_code_4: auth_code_4 || null,
                 is_active: true,
                 sync_status: "PENDING"
             }

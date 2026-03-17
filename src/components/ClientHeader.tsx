@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/StoreContext";
-import { LogOut, Settings, User, Store as StoreIcon, KeyRound } from "lucide-react";
+import { LogOut, Settings, User, Store as StoreIcon, KeyRound, Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
     Select,
@@ -22,6 +22,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 export function ClientHeader() {
     const { stores, currentStore, setCurrentStore, isLoading } = useStore();
@@ -43,14 +44,34 @@ export function ClientHeader() {
                     R
                 </div>
                 <span className="font-bold text-lg tracking-tight mr-2 md:mr-6 hidden sm:block">RestoGenie</span>
-                <nav className="flex items-center gap-4 md:gap-6 sm:border-l border-[#F2F4F6] sm:pl-6 h-6 overflow-x-auto custom-scrollbar no-scrollbar whitespace-nowrap mask-linear-fade">
+
+                {/* Desktop Nav */}
+                <nav className="hidden md:flex items-center gap-4 md:gap-6 sm:border-l border-[#F2F4F6] sm:pl-6 h-6 whitespace-nowrap">
                     <a href="/dashboard" className="text-sm font-bold text-[#191F28] hover:text-[#3182F6] transition-colors">대시보드</a>
-                    <a href="/dashboard/analytics" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors hidden md:block">심층 분석</a>
-                    <a href="/dashboard/traffic" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors hidden md:block">유동인구 분석</a>
+                    <a href="/dashboard/analytics" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">심층 분석</a>
+                    <a href="/dashboard/traffic" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">유동인구 분석</a>
                     <a href="/mapping" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">메뉴 맵핑</a>
-                    <a href="/logs" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors hidden sm:block">시스템 로그</a>
+                    <a href="/logs" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">시스템 로그</a>
                     <a href="/billing" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors hidden lg:block">구독 관리</a>
                 </nav>
+
+                {/* Mobile Hamburger Nav */}
+                <Sheet>
+                    <SheetTrigger className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-md">
+                        <Menu className="w-5 h-5" />
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-[250px] sm:w-[300px] flex flex-col gap-6 pt-12">
+                        <SheetTitle className="sr-only">모바일 메뉴</SheetTitle>
+                        <nav className="flex flex-col gap-4">
+                            <a href="/dashboard" className="text-base font-bold text-[#191F28] hover:text-[#3182F6] transition-colors">대시보드</a>
+                            <a href="/dashboard/analytics" className="text-base font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">심층 분석</a>
+                            <a href="/dashboard/traffic" className="text-base font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">유동인구 분석</a>
+                            <a href="/mapping" className="text-base font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">메뉴 맵핑</a>
+                            <a href="/logs" className="text-base font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">시스템 로그</a>
+                            <a href="/billing" className="text-base font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">구독 관리</a>
+                        </nav>
+                    </SheetContent>
+                </Sheet>
             </div>
 
             <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">

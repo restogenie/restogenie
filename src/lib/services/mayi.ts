@@ -1,17 +1,13 @@
 import { prisma } from "../db";
 import { DateTime } from "luxon";
 
-const MAYI_EMAIL = "park.yohan@ctrl-m.co.kr";
-const MAYI_PASSWORD = "Slam2025!@";
-const DASHBOARD_ID = "cf82efb5-a312-4900-b09a-1a1d2c6530a7";
-
 export class MayiSyncService {
-    private static async getAuthToken(): Promise<string | null> {
+    private static async getAuthToken(email: string, password: string): Promise<string | null> {
         try {
             const response = await fetch("https://api.mash-board.io/api/token/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: MAYI_EMAIL, password: MAYI_PASSWORD })
+                body: JSON.stringify({ email, password })
             });
 
             if (response.ok) {
@@ -26,8 +22,8 @@ export class MayiSyncService {
         }
     }
 
-    public static async runSync(startDate: Date, endDate: Date) {
-        const token = await this.getAuthToken();
+    public static async runSync(email: string, password: string, dashboardId: string, mayiStoreId: string, systemStoreId: number, startDate: Date, endDate: Date) {
+        const token = await this.getAuthToken(email, password);
         if (!token) throw new Error("메이아이(CCTV) 인증 토큰 발급에 실패했습니다.");
 
         const startStr = DateTime.fromJSDate(startDate).toFormat("yyyy-MM-dd");
@@ -43,7 +39,7 @@ export class MayiSyncService {
         const allRecordsByWidget: Record<string, any> = {};
 
         while (hasNext) {
-            const url = `https://api.mash-board.io/dashboards/${DASHBOARD_ID}/data?start_date=${startStr}&end_date=${endStr}&output_type=RAW_JSON&page=${currentPage}&page_size=${pageSize}`;
+            const url = `https://api.mash-board.io/dashboards/${dashboardId}/data?start_date=${startStr}&end_date=${endStr}&output_type=RAW_JSON&page=${currentPage}&page_size=${pageSize}`;
             
             try {
                 const response = await fetch(url, {
@@ -102,13 +98,6 @@ export class MayiSyncService {
         const allowedWidgets = ["매장 방문", "유동인구"];
         const uniqueSet = new Set<string>();
 
-        // We need to resolve Store IDs based on name
-        const storeMap: Record<string, number> = {};
-        const stores = await prisma.store.findMany({ select: { id: true, name: true } });
-        for (const s of stores) {
-            storeMap[s.name] = s.id;
-        }
-
         for (const wId in allRecordsByWidget) {
             const widget = allRecordsByWidget[wId];
             if (!allowedWidgets.includes(widget.name)) continue;
@@ -126,19 +115,33 @@ export class MayiSyncService {
                 if (uniqueSet.has(strRep)) continue;
                 uniqueSet.add(strRep);
 
-                // Extraction logic
+                // Extraction logic: match the record values against the provided mayiStoreId UUID.
+                let belongsToStore = false;
+                let hasPlaceField = false;
+
                 const storeKey = localMap['매장'] || 'place';
-                const storeNameRaw = (storeKey && record[storeKey]) ? record[storeKey] : "Merged";
                 
-                // Flexible store matching (e.g. "슬램버거 강남점" -> "슬램버거 강남점")
-                let matchedStoreId = null;
-                for (const [name, sId] of Object.entries(storeMap)) {
-                    if (storeNameRaw.includes(name) || name.includes(storeNameRaw)) {
-                        matchedStoreId = sId;
-                        break;
+                if (storeKey && record[storeKey] !== undefined) {
+                    hasPlaceField = true;
+                    if (String(record[storeKey]).toLowerCase() === mayiStoreId.toLowerCase()) {
+                        belongsToStore = true;
+                    }
+                } else {
+                    // Fallback check: look through all values just in case
+                    for (const val of Object.values(record)) {
+                        if (String(val).toLowerCase() === mayiStoreId.toLowerCase()) {
+                            belongsToStore = true;
+                            break;
+                        }
                     }
                 }
-                if (!matchedStoreId) continue; // skip if no store matches
+
+                // If the widget doesn't return store specific IDs, assume it belongs to the whole dashboard (and therefore this store)
+                if (!hasPlaceField && !belongsToStore) {
+                    belongsToStore = true; 
+                }
+
+                if (!belongsToStore) continue;
 
                 const dateKey = localMap['매장 방문 일자'] || localMap['매장 입장 날짜'] || localMap['구역 방문 일자'] || 'place_enter_daily' || 'event_source_enter_daily';
                 const timeKey = localMap['매장 방문 시각'] || localMap['매장 입장 시각'] || localMap['구역 방문 시각'] || 'place_enter_hour' || 'event_source_enter_hour';
@@ -168,7 +171,7 @@ export class MayiSyncService {
                 const genderKey = localMap['성별'];
 
                 finalTrafficLines.push({
-                    store_id: matchedStoreId,
+                    store_id: systemStoreId,
                     widget_name: widget.name,
                     age_group: (ageKey && record[ageKey]) ? String(record[ageKey]) : null,
                     gender: (genderKey && record[genderKey]) ? String(record[genderKey]) : null,
@@ -185,6 +188,7 @@ export class MayiSyncService {
             await prisma.$transaction(async (tx) => {
                 await tx.footTraffic.deleteMany({
                     where: {
+                        store_id: systemStoreId,
                         visit_date: {
                             gte: DateTime.fromISO(startStr).toJSDate(),
                             lte: DateTime.fromISO(endStr).toJSDate()

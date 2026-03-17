@@ -76,7 +76,7 @@ export default function TrafficDashboardPage() {
             const startDateStr = date?.from ? format(date.from, 'yyyy-MM-dd') : format(subDays(new Date(), 30), 'yyyy-MM-dd');
             const endDateStr = date?.to ? format(date.to, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
 
-            const res = await axios.post(`/api/v1/sync/mayi`, { start_date: startDateStr, end_date: endDateStr });
+            const res = await axios.post(`/api/v1/sync/mayi`, { store_id: currentStore.id, start_date: startDateStr, end_date: endDateStr });
             if (res.data.success) {
                 toast.success(res.data.message || "동기화 완료!", { id: 'cctvSync' });
                 // Re-fetch data after sync
@@ -146,6 +146,55 @@ export default function TrafficDashboardPage() {
         } catch (error: any) {
             toast.error(`리포트 생성 실패: ${error.response?.data?.detail || error.message}`, { id: toastId });
         }
+    };
+
+    // Traffic Heatmap Matrix builder
+    const renderHeatmap = () => {
+        if (!trafficData?.dayHourHeatmap) return null;
+
+        const days = ['일', '월', '화', '수', '목', '금', '토'];
+        const hours = Array.from({ length: 24 }, (_, i) => i);
+
+        // Find max to calculate opacity
+        const maxVisitors = Math.max(...trafficData.dayHourHeatmap.map((d: any) => d.visitors), 1);
+
+        const matrix: number[][] = Array(7).fill(0).map(() => Array(24).fill(0));
+        trafficData.dayHourHeatmap.forEach((item: any) => {
+            matrix[item.dayIndex][item.hour] = item.visitors;
+        });
+
+        return (
+            <div className="w-full overflow-x-auto">
+                <div className="min-w-[700px] py-4">
+                    <div className="flex mb-1">
+                        <div className="w-12 flex-shrink-0"></div>
+                        {hours.map(h => (
+                            <div key={h} className="flex-1 text-center text-[10px] text-[#8B95A1]">{h}시</div>
+                        ))}
+                    </div>
+                    {days.map((day, dIdx) => (
+                        <div key={day} className="flex mb-1 items-center">
+                            <div className="w-12 flex-shrink-0 text-xs font-medium text-[#4E5968]">{day}요일</div>
+                            {hours.map(h => {
+                                const val = matrix[dIdx][h];
+                                const intensity = val > 0 ? 0.1 + (val / maxVisitors) * 0.9 : 0;
+                                return (
+                                    <div
+                                        key={`${dIdx}-${h}`}
+                                        className="flex-1 h-8 mx-0.5 rounded-sm transition-all hover:ring-2 hover:ring-indigo-500 relative group"
+                                        style={{ backgroundColor: intensity > 0 ? `rgba(99, 102, 241, ${intensity})` : '#F2F4F6' }}
+                                    >
+                                        <div className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#191F28] text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 shadow-lg">
+                                            {day}요일 {h}시: {val}명 ({((val / (trafficData.totalVisitsForHeatmap || 1)) * 100).toFixed(1)}%)
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
     };
 
     if (!currentStore) return null;
@@ -245,21 +294,14 @@ export default function TrafficDashboardPage() {
                     </div>
 
                     {/* Time Matrix Card */}
-                    <div className="bg-white rounded-lg shadow-sm border border-[#F2F4F6] p-6">
-                        <h3 className="text-xl font-bold text-[#191F28] mb-1">시간대별 트래픽 분포</h3>
-                        <p className="text-sm text-[#8B95A1] mb-6">어느 시간대에 매장 방문이 집중되는지 분석합니다.</p>
-                        
-                        <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={trafficData.timeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F2F4F6" />
-                                    <XAxis dataKey="hour" tick={{ fontSize: 12, fill: '#8B95A1' }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fontSize: 12, fill: '#8B95A1' }} axisLine={false} tickLine={false} />
-                                    <RechartsTooltip cursor={{ fill: '#F2F4F6' }} contentStyle={{ borderRadius: '8px', border: '1px solid #E5E8EB', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                    <Bar dataKey="visitors" name="방문자 수" fill="#818cf8" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                    <div className="bg-white rounded-lg shadow-sm border border-[#F2F4F6] p-6 lg:col-span-2">
+                        <div className="flex items-start justify-between mb-6">
+                             <div>
+                                  <h3 className="text-xl font-bold text-[#191F28] mb-1">요일 및 시간대별 트래픽 분포</h3>
+                                  <p className="text-sm text-[#8B95A1]">어느 시간대에 매장 방문이 집중되는지 분석합니다. 색이 진할수록 유동인구 입장이 많음을 의미합니다.</p>
+                             </div>
                         </div>
+                        {renderHeatmap()}
                     </div>
 
                     {/* Demographic Matrix Card */}
