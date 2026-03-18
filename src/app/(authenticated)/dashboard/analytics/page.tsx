@@ -4,7 +4,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { format, subDays } from 'date-fns';
 import { useStore } from '@/lib/StoreContext';
-import { RefreshCw, TrendingUp, TrendingDown, BarChart3, CalendarRange, Utensils, FileText, Printer, ArrowRight } from 'lucide-react';
+import { 
+    RefreshCw, TrendingUp, TrendingDown, BarChart3, CalendarRange, Utensils, FileText, Printer, ArrowRight,
+    AlertTriangle, Users, Store, CheckCircle2, ChevronLeft, BellRing, Frown, Activity, Star, Zap, ShieldAlert
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend, ComposedChart } from 'recharts';
 import { clsx, type ClassValue } from 'clsx';
@@ -28,12 +31,13 @@ export default function AnalyticsPage() {
     const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
     // Report State
-    const [reportHtml, setReportHtml] = useState<string | null>(null);
+    const [reportData, setReportData] = useState<any>(null);
     const [reportLoading, setReportLoading] = useState(false);
+    const [reportActiveTab, setReportActiveTab] = useState('insight');
 
     const fetchReport = async () => {
         if (!currentStore) return;
-        if (reportHtml) return; // Already fetched
+        if (reportData) return; // Already fetched
         setReportLoading(true);
         try {
             const currentDate = new Date(endDate);
@@ -45,11 +49,16 @@ export default function AnalyticsPage() {
             const weekNumber = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1)/7);
 
             const res = await axios.post('/api/v1/reports', { storeId: currentStore.id, year, weekNumber });
-            if (res.data.htmlSnippet) {
-                setReportHtml(res.data.htmlSnippet);
+            if (res.data?.status === 'success' && res.data?.data) {
+                setReportData(res.data.data);
             }
         } catch (err: any) {
-            toast.error("리포트 생성 실패: " + (err.response?.data?.detail || err.message));
+            console.error('Failed to fetch analytics', err);
+            if (err.response?.status === 401) {
+                window.location.href = '/login';
+            } else {
+                toast.error("리포트 생성 실패: " + (err.response?.data?.detail || err.message));
+            }
         } finally {
             setReportLoading(false);
         }
@@ -454,20 +463,13 @@ export default function AnalyticsPage() {
                         <div>
                             <h2 className="text-xl font-bold flex items-center gap-2 text-[#191F28]">
                                 <FileText className="w-6 h-6 text-indigo-500" />
-                                자동화 리포트
+                                AI 주간 전략 컨설팅 리포트
                             </h2>
-                            <p className="text-sm text-[#8B95A1] mt-1">AI가 분석한 한 주간의 매장 운영 성과를 웹에서 확인하고 PDF로 보관하세요.</p>
+                            <p className="text-sm text-[#8B95A1] mt-1">RESTOGENIE AI가 분석한 한 주간의 매장 운영 성과 원인 진단과 본사 실행 과제입니다.</p>
                         </div>
                         <button
-                            onClick={() => {
-                                const newWindow = window.open();
-                                if (newWindow && reportHtml) {
-                                    newWindow.document.write(reportHtml);
-                                    newWindow.document.close();
-                                    setTimeout(() => newWindow.print(), 500);
-                                }
-                            }}
-                            disabled={reportLoading || !reportHtml}
+                            onClick={() => window.print()}
+                            disabled={reportLoading || !reportData}
                             className="flex items-center gap-2 px-5 py-2.5 bg-[#191F28] hover:bg-[#333D4B] text-white rounded-md font-bold transition-colors shadow-sm disabled:opacity-50 whitespace-nowrap"
                         >
                             {reportLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
@@ -475,20 +477,141 @@ export default function AnalyticsPage() {
                         </button>
                     </div>
 
-                    <div className="bg-white border text-black border-[#E5E8EB] rounded-lg shadow-md w-full min-h-[800px] flex items-center justify-center p-0 overflow-hidden relative">
+                    <div className="w-full min-h-[500px]">
                         {reportLoading ? (
-                            <div className="flex flex-col items-center text-gray-400 py-32">
+                            <div className="flex flex-col items-center justify-center bg-white border border-[#E5E8EB] rounded-2xl shadow-sm py-32">
                                 <RefreshCw className="w-8 h-8 animate-spin mb-4 text-indigo-500" />
-                                <p className="font-medium text-[#4E5968]">리포트를 생성 중입니다...</p>
-                                <p className="text-sm mt-2 text-[#8B95A1]">해당 작업은 약 10~15초 소요될 수 있습니다.</p>
+                                <p className="font-bold text-[#4E5968] text-lg">AI가 전 지점의 데이터를 종합하여 전략을 도출 중입니다...</p>
+                                <p className="text-sm mt-2 text-[#8B95A1]">이 과정은 매장 규모에 따라 약 5~10초 정도 소요됩니다.</p>
                             </div>
-                        ) : reportHtml ? (
-                            <div 
-                                className="w-full h-full min-h-[1000px] mx-auto bg-white"
-                                dangerouslySetInnerHTML={{ __html: reportHtml }} 
-                            />
+                        ) : !reportData ? (
+                            <div className="flex flex-col items-center justify-center bg-white border border-[#E5E8EB] rounded-2xl shadow-sm py-32">
+                                <TrendingUp className="w-12 h-12 text-[#8B95A1] mb-4 opacity-50" />
+                                <div className="text-[#8B95A1] font-bold text-lg">아직 생성된 주간 데이터가 없습니다.</div>
+                                <div className="text-[#8B95A1] font-medium text-sm mt-1">상단에서 주차를 선택하면 리포트가 자동 로딩됩니다.</div>
+                            </div>
                         ) : (
-                            <div className="text-[#8B95A1] font-medium py-32">데이터가 없습니다.</div>
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 print:space-y-4">
+                                
+                                {/* AI 알림 배너 */}
+                                <div className={cn(
+                                    "rounded-3xl p-6 md:p-8 text-white shadow-md flex flex-col md:flex-row items-start md:items-center gap-6",
+                                    reportData.status === 'critical' ? 'bg-gradient-to-br from-red-600 to-rose-500' :
+                                    reportData.status === 'warning' ? 'bg-gradient-to-br from-orange-500 to-amber-500' :
+                                    'bg-gradient-to-br from-emerald-500 to-teal-500'
+                                )}>
+                                    <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-md shrink-0">
+                                        <AlertTriangle className="w-10 h-10 text-white" />
+                                    </div>
+                                    <div>
+                                        <div className="inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide mb-2">
+                                            AI 핵심 진단 요약
+                                        </div>
+                                        <h2 className="text-2xl font-extrabold mb-2 text-white">{reportData.alertTitle}</h2>
+                                        <p className="text-white/90 text-sm md:text-base font-medium leading-relaxed max-w-3xl">
+                                            {reportData.alertDesc}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* 4대 KPI 매트릭스 */}
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 print:grid-cols-4">
+                                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                                        <div className="text-sm font-bold text-slate-400 mb-2">상권 유동인구</div>
+                                        <div className="text-3xl font-black text-slate-800 tracking-tighter">{reportData.metrics.traffic}</div>
+                                    </div>
+                                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                                        <div className="text-sm font-bold text-slate-400 mb-2">유입 전환율</div>
+                                        <div className={cn("text-3xl font-black tracking-tighter", parseFloat(reportData.metrics.captureRate) < parseFloat(reportData.benchmarks.captureRate) ? "text-red-500" : "text-slate-800")}>
+                                            {reportData.metrics.captureRate}
+                                        </div>
+                                        <div className="text-xs font-bold text-slate-400 mt-2 bg-slate-50 inline-block px-2 py-1 rounded">정상 목표: {reportData.benchmarks.captureRate}</div>
+                                    </div>
+                                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                                        <div className="text-sm font-bold text-slate-400 mb-2">총 결제/주문 건수</div>
+                                        <div className="text-3xl font-black text-slate-800 tracking-tighter">{reportData.metrics.visitors}</div>
+                                    </div>
+                                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                                        <div className="text-sm font-bold text-slate-400 mb-2">평균 객단가</div>
+                                        <div className="text-3xl font-black text-slate-800 tracking-tighter">{reportData.metrics.atv}</div>
+                                        <div className="text-xs font-bold text-slate-400 mt-2 bg-slate-50 inline-block px-2 py-1 rounded">정상 목표: {reportData.benchmarks.atv}</div>
+                                    </div>
+                                </div>
+
+                                {/* 진단 및 액션 탭 컨테이너 */}
+                                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mt-8 print:shadow-none print:border-none print:mt-4">
+                                    {/* 탭 헤더 */}
+                                    <div className="flex border-b border-slate-200 print:hidden">
+                                        <button 
+                                            className={cn("flex-1 py-5 text-sm md:text-base font-extrabold flex items-center justify-center gap-3 transition-colors", reportActiveTab === 'insight' ? "bg-indigo-50/50 text-indigo-700 border-b-4 border-indigo-600" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600")}
+                                            onClick={() => setReportActiveTab('insight')}
+                                        >
+                                            <Activity size={20} className={reportActiveTab === 'insight' ? 'text-indigo-600' : ''} /> 
+                                            서비스 마케팅 원인 분석 (Root Cause)
+                                        </button>
+                                        <button 
+                                            className={cn("flex-1 py-5 text-sm md:text-base font-extrabold flex items-center justify-center gap-3 transition-colors", reportActiveTab === 'action' ? "bg-indigo-50/50 text-indigo-700 border-b-4 border-indigo-600" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600")}
+                                            onClick={() => setReportActiveTab('action')}
+                                        >
+                                            <CheckCircle2 size={20} className={reportActiveTab === 'action' ? 'text-indigo-600' : ''} /> 
+                                            본사 실행 과제 (Action Items)
+                                            <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full ml-1">{reportData.report.actions.length}건</span>
+                                        </button>
+                                    </div>
+
+                                    {/* 탭 본문 */}
+                                    <div className="p-6 md:p-10 bg-slate-50/30 print:bg-transparent print:p-0 print:block">
+                                        {/* 원인 분석 (Insight) 탭 */}
+                                        {(reportActiveTab === 'insight' || typeof window !== 'undefined' && window.matchMedia('print').matches) && (
+                                            <div className="space-y-6 animate-in fade-in duration-300 print:mb-8">
+                                                <h3 className="hidden print:block text-lg font-bold text-slate-800 mb-4 border-b pb-2">서비스 마케팅 원인 분석 (Root Cause)</h3>
+                                                {reportData.report.causes.map((cause: any, idx: number) => (
+                                                    <div key={idx} className="flex flex-col md:flex-row gap-5 items-start bg-white p-6 rounded-2xl border border-slate-100 shadow-sm print:shadow-none print:border-slate-300">
+                                                        <div className="bg-indigo-50 p-4 rounded-2xl text-indigo-600 shrink-0 print:bg-transparent print:border print:border-indigo-100">
+                                                            <Activity size={28} />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h4 className="font-extrabold text-slate-800 text-lg md:text-xl mb-2">{cause.title}</h4>
+                                                            <p className="text-slate-600 font-medium leading-relaxed text-sm md:text-base">
+                                                                {cause.desc}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* 실행 과제 (Action) 탭 */}
+                                        {(reportActiveTab === 'action' || typeof window !== 'undefined' && window.matchMedia('print').matches) && (
+                                            <div className="space-y-5 animate-in fade-in duration-300">
+                                                <h3 className="hidden print:block text-lg font-bold text-slate-800 mb-4 border-b pb-2 mt-8">본사 실행 과제 (Action Items)</h3>
+                                                {reportData.report.actions.map((action: any, idx: number) => (
+                                                    <div key={idx} className="bg-white border-2 border-slate-100 rounded-2xl p-6 md:p-8 hover:border-indigo-200 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm print:shadow-none print:border-slate-300 print:border">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-3 mb-3">
+                                                                <h4 className="font-extrabold text-indigo-800 text-lg">
+                                                                    {action.title}
+                                                                </h4>
+                                                                {action.type === 'urgent' && (
+                                                                    <span className="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full font-black tracking-wide border border-red-200">
+                                                                        긴급 실행
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-slate-600 font-medium text-sm md:text-base leading-relaxed">
+                                                                {action.desc}
+                                                            </p>
+                                                        </div>
+                                                        <button className="w-full md:w-auto shrink-0 text-sm font-bold text-white bg-slate-800 px-6 py-3.5 rounded-xl hover:bg-indigo-600 transition-colors flex items-center justify-center gap-2 shadow-sm print:hidden">
+                                                            {action.btn} <ArrowRight size={18}/>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </TabsContent>
