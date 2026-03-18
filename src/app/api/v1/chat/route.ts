@@ -45,20 +45,23 @@ export async function POST(req: Request) {
         }
 
         // --- RAG Context Collection (Last 7 Days) ---
-        const lastWeekStart = DateTime.now().setZone('Asia/Seoul').minus({ days: 7 }).startOf('day').toJSDate();
-        const lastWeekEnd = DateTime.now().setZone('Asia/Seoul').endOf('day').toJSDate();
+        // IMPORTANT: Always pass full ISO-8601 DateTime strings to Prisma to prevent
+        // "premature end of input. Expected ISO-8601 DateTime" errors in Vercel Serverless.
+        const lastWeekStartISO = new Date(DateTime.now().setZone('Asia/Seoul').minus({ days: 7 }).startOf('day').toMillis()).toISOString();
+        const lastWeekEndISO = new Date(DateTime.now().setZone('Asia/Seoul').endOf('day').toMillis()).toISOString();
 
+        const storeIdNum = parseInt(storeId, 10);
         const [store, sales, traffic] = await Promise.all([
-            prisma.store.findUnique({ where: { id: parseInt(storeId, 10) } }),
+            prisma.store.findUnique({ where: { id: storeIdNum } }),
             prisma.sale.groupBy({
                 by: ['business_date'],
-                where: { store_id: parseInt(storeId, 10), business_date: { gte: lastWeekStart } },
+                where: { store_id: storeIdNum, business_date: { gte: lastWeekStartISO } },
                 _sum: { paid_amount: true },
                 _count: { _all: true }
             }),
             prisma.footTraffic.groupBy({
                 by: ['visit_date', 'widget_name'],
-                where: { store_id: parseInt(storeId, 10), visit_date: { gte: lastWeekStart, lte: lastWeekEnd } },
+                where: { store_id: storeIdNum, visit_date: { gte: lastWeekStartISO, lte: lastWeekEndISO } },
                 _sum: { visit_count: true }
             })
         ]);
