@@ -120,15 +120,14 @@ export async function POST(req: Request) {
 Your goal is to answer the user's questions concerning their restaurant data, sales, foot traffic, and operations.
 Always be polite, professional, and precise. Base your answers strictly on the provided context if relevant. Use Markdown formatting.
 Respond in Korean.
+Today's date is ${DateTime.now().setZone('Asia/Seoul').toFormat('yyyy-MM-dd (EEE)')}.
 
 === Database Context (Last 7 Days) ===
 ${contextString}
 ======================================`,
-            // Enable telemetry or metadata mapping if needed for RAG sourcing
-            // onFinish can write to db if session tracking is built later
         });
 
-        return result.toAIStreamResponse();
+        return result.toDataStreamResponse();
         
     } catch (e: any) {
         console.error("Chat API Error:", e);
