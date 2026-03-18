@@ -52,7 +52,7 @@ export async function POST(req: Request) {
             prisma.store.findUnique({ where: { id: parseInt(storeId, 10) } }),
             prisma.sale.groupBy({
                 by: ['business_date'],
-                where: { store_id: parseInt(storeId, 10), business_date: { gte: DateTime.fromJSDate(lastWeekStart).toFormat('yyyy-MM-dd') } },
+                where: { store_id: parseInt(storeId, 10), business_date: { gte: lastWeekStart } },
                 _sum: { paid_amount: true },
                 _count: { _all: true }
             }),
