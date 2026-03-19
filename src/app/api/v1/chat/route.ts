@@ -112,11 +112,12 @@ export async function POST(req: Request) {
                 break;
         }
 
-        // Stream the response using Vercel AI SDK
-        const result = await streamText({
-            model: aiModel as any,
-            messages: messages,
-            system: `You are an expert F&B business data analyst and consultant for 'RESTOGENIE', a smart dashboard platform.
+        // Use generateText for robust error handling (streamText errors bypass try-catch mid-stream)
+        try {
+            const result = await generateText({
+                model: aiModel as any,
+                messages: messages,
+                system: `You are an expert F&B business data analyst and consultant for 'RESTOGENIE', a smart dashboard platform.
 Your goal is to answer the user's questions concerning their restaurant data, sales, foot traffic, and operations.
 Always be polite, professional, and precise. Base your answers strictly on the provided context if relevant. Use Markdown formatting.
 Respond in Korean.
@@ -125,9 +126,52 @@ Today's date is ${DateTime.now().setZone('Asia/Seoul').toFormat('yyyy-MM-dd (EEE
 === Database Context (Last 7 Days) ===
 ${contextString}
 ======================================`,
-        });
+            });
 
-        return result.toDataStreamResponse();
+            // Return as a Vercel AI SDK compatible data stream response
+            // useChat expects this specific format
+            const encoder = new TextEncoder();
+            const responseText = result.text || "죄송합니다. 응답을 생성하지 못했습니다.";
+            
+            // Build AI SDK Data Stream Protocol response
+            // Format: each chunk is a line with format "0:<json-encoded-string>\n"
+            const chunks = responseText.match(/.{1,100}/g) || [responseText];
+            const stream = new ReadableStream({
+                start(controller) {
+                    for (const chunk of chunks) {
+                        controller.enqueue(encoder.encode(`0:${JSON.stringify(chunk)}\n`));
+                    }
+                    // Send finish message
+                    controller.enqueue(encoder.encode(`d:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}\n`));
+                    controller.close();
+                }
+            });
+
+            return new Response(stream, {
+                headers: {
+                    'Content-Type': 'text/plain; charset=utf-8',
+                    'X-Vercel-AI-Data-Stream': 'v1',
+                },
+            });
+        } catch (aiError: any) {
+            console.error("AI Generation Error:", aiError);
+            // Return the error message as a readable AI response instead of crashing
+            const errorMsg = `⚠️ AI 응답 생성 중 오류가 발생했습니다.\n\n**원인:** ${aiError.message || '알 수 없는 오류'}\n\n설정 메뉴에서 API 키를 확인하거나, 다른 AI 엔진으로 전환해 보세요.`;
+            const encoder = new TextEncoder();
+            const stream = new ReadableStream({
+                start(controller) {
+                    controller.enqueue(encoder.encode(`0:${JSON.stringify(errorMsg)}\n`));
+                    controller.enqueue(encoder.encode(`d:{"finishReason":"error","usage":{"promptTokens":0,"completionTokens":0}}\n`));
+                    controller.close();
+                }
+            });
+            return new Response(stream, {
+                headers: {
+                    'Content-Type': 'text/plain; charset=utf-8',
+                    'X-Vercel-AI-Data-Stream': 'v1',
+                },
+            });
+        }
         
     } catch (e: any) {
         console.error("Chat API Error:", e);
