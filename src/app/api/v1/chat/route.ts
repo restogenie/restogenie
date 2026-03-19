@@ -100,7 +100,7 @@ export async function POST(req: Request) {
                 break;
             case 'GEMINI':
                 const google = createGoogleGenerativeAI({ apiKey: rawApiKey });
-                aiModel = google('gemini-2.5-flash');
+                aiModel = google('gemini-2.0-flash');
                 break;
             case 'CLAUDE':
                 const anthropic = createAnthropic({ apiKey: rawApiKey });
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
                 break;
             default:
                 const defaultGoogle = createGoogleGenerativeAI({ apiKey: rawApiKey });
-                aiModel = defaultGoogle('gemini-2.5-flash');
+                aiModel = defaultGoogle('gemini-2.0-flash');
                 break;
         }
 
@@ -128,10 +128,16 @@ ${contextString}
 ======================================`,
             });
 
+            console.log("AI Result:", JSON.stringify({ text: result.text?.substring(0, 100), finishReason: result.finishReason, usage: result.usage }));
+
             // Return as a Vercel AI SDK compatible data stream response
             // useChat expects this specific format
             const encoder = new TextEncoder();
-            const responseText = result.text || "죄송합니다. 응답을 생성하지 못했습니다.";
+            const responseText = result.text;
+            
+            if (!responseText || responseText.trim().length === 0) {
+                throw new Error(`AI 모델이 빈 응답을 반환했습니다. (finishReason: ${result.finishReason}, engine: ${requestedEngine})`);
+            }
             
             // Build AI SDK Data Stream Protocol response
             // Format: each chunk is a line with format "0:<json-encoded-string>\n"
