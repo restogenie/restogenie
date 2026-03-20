@@ -135,31 +135,56 @@ ${menuRanking || '데이터 없음'}
 ${sales.map(s => `- ${DateTime.fromJSDate(s.business_date).toFormat('MM.dd(EEE)')}: ${(s._sum.paid_amount || 0).toLocaleString()}원 / ${s._count._all}건`).join('\n') || '데이터 없음'}
 `.trim();
 
-        // --- 5. Fetch User's AI API Key ---
+        // --- 5. Determine AI Keys & Attempts ---
         const apiKeyRecord = await prisma.aiApiKey.findFirst({
             where: { user_id: user.id, is_active: true },
             orderBy: { created_at: 'desc' }
         });
 
-        let aiGeneratedReport = null;
+        const attempts: { engine: string; key: string; label: string }[] = [];
+        let actualEngine = 'GEMINI';
 
         if (apiKeyRecord) {
             try {
-                const rawApiKey = decrypt(apiKeyRecord.encrypted_key);
+                const userKey = decrypt(apiKeyRecord.encrypted_key);
+                actualEngine = apiKeyRecord.engine;
+                attempts.push({ engine: actualEngine, key: userKey, label: 'user' });
+            } catch (e) {
+                // Decryption failed, ignore user key
+            }
+        }
+
+        const fbGemini = process.env.FALLBACK_GEMINI_API_KEY;
+        const fbOpenAI = process.env.FALLBACK_OPENAI_API_KEY;
+
+        if (fbGemini && !attempts.find(a => a.engine === 'GEMINI' && a.key === fbGemini)) {
+            attempts.push({ engine: 'GEMINI', key: fbGemini, label: 'fallback-gemini' });
+        }
+        if (fbOpenAI && !attempts.find(a => a.engine === 'OPENAI' && a.key === fbOpenAI)) {
+            attempts.push({ engine: 'OPENAI', key: fbOpenAI, label: 'fallback-openai' });
+        }
+
+        let aiGeneratedReport = null;
+
+        for (const attempt of attempts) {
+            try {
                 let aiModel: any;
 
-                switch (apiKeyRecord.engine) {
+                // Configure Model
+                switch (attempt.engine) {
                     case 'OPENAI':
-                        aiModel = createOpenAI({ apiKey: rawApiKey })('gpt-4o');
+                        aiModel = createOpenAI({ apiKey: attempt.key })('gpt-4o-2024-08-06'); // Support structured output
                         break;
                     case 'CLAUDE':
-                        aiModel = createAnthropic({ apiKey: rawApiKey })('claude-3-5-sonnet-20241022');
+                        aiModel = createAnthropic({ apiKey: attempt.key })('claude-3-5-sonnet-20241022');
                         break;
                     case 'GEMINI':
                     default:
-                        aiModel = createGoogleGenerativeAI({ apiKey: rawApiKey })('gemini-3-flash-preview');
+                        aiModel = createGoogleGenerativeAI({ apiKey: attempt.key })('gemini-3-flash-preview');
                         break;
                 }
+
+                console.log(`[Weekly Report] Attempting AI generation with [${attempt.label}] engine: ${attempt.engine}`);
 
                 const { object } = await generateObject({
                     model: aiModel,
@@ -178,9 +203,15 @@ ${sales.map(s => `- ${DateTime.fromJSDate(s.business_date).toFormat('MM.dd(EEE)'
                 });
 
                 aiGeneratedReport = object;
+                console.log(`[Weekly Report] Success with [${attempt.label}]`);
+                break; // Stop on success
             } catch (aiError: any) {
-                console.error("AI Report Generation Error:", aiError.message);
-                // AI fails → fall through to fallback
+                console.error(`[Weekly Report] AI attempt [${attempt.label}] failed:`, aiError.message);
+                const msg = (aiError.message || '').toLowerCase();
+                if (msg.includes('quota') || msg.includes('billing') || msg.includes('credit') || msg.includes('rate') || msg.includes('limit')) {
+                    continue; // Try next fallback key
+                }
+                break; // If it's a structural error, don't retry
             }
         }
 
