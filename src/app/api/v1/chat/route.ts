@@ -159,8 +159,10 @@ ${contextString}
             }
 
             const data = await res.json();
+            // Gemini 3 returns text + thoughtSignature in the SAME part object
+            // Extract text from all parts that have a text field
             const text = data?.candidates?.[0]?.content?.parts
-                ?.filter((p: any) => p.text && !p.thoughtSignature)
+                ?.filter((p: any) => typeof p.text === 'string')
                 ?.map((p: any) => p.text)
                 ?.join('') || '';
             
