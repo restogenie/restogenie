@@ -126,3 +126,108 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ===== AI Chat Markdown Prose Styles ===== */
+.markdown-prose {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--foreground);
+}
+
+.markdown-prose h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border);
+}
+
+.markdown-prose h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-prose p {
+  margin-bottom: 1em;
+}
+
+.markdown-prose ul,
+.markdown-prose ol {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.markdown-prose li {
+  margin-bottom: 0.4em;
+}
+
+/* Table with borders */
+.markdown-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0 1.5em;
+  font-size: 0.85rem;
+}
+
+.markdown-prose th {
+  background: var(--muted);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.6em 0.75em;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.markdown-prose td {
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--border);
+}
+
+.markdown-prose tr:nth-child(even) {
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
+}
+
+/* Bold & emphasis */
+.markdown-prose strong {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+/* Code blocks */
+.markdown-prose code {
+  font-size: 0.85em;
+  background: var(--muted);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+.markdown-prose pre {
+  background: var(--muted);
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.markdown-prose pre code {
+  background: none;
+  padding: 0;
+}
+
+/* Horizontal rules for section separation */
+.markdown-prose hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5em 0;
+}
+
+/* Blockquotes */
+.markdown-prose blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--muted-foreground);
+}
