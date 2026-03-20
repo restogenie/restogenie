@@ -130,7 +130,47 @@ Today's date is ${DateTime.now().setZone('Asia/Seoul').toFormat('yyyy-MM-dd (EEE
 ${contextString}
 ======================================`;
 
-        // --- Attempt generateText with auto-fallback on quota errors ---
+        // --- Helper: call AI with direct REST API for Gemini 3 (SDK can't parse thoughtSignature) ---
+        async function callGeminiDirect(apiKey: string, sysPrompt: string, msgs: any[]): Promise<string> {
+            // Convert useChat messages format to Gemini API format
+            const contents: any[] = [];
+            for (const msg of msgs) {
+                contents.push({
+                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: msg.content }]
+                });
+            }
+
+            const res = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        systemInstruction: { parts: [{ text: sysPrompt }] },
+                        contents,
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const errBody = await res.text();
+                throw new Error(`Gemini API Error (${res.status}): ${errBody.substring(0, 200)}`);
+            }
+
+            const data = await res.json();
+            const text = data?.candidates?.[0]?.content?.parts
+                ?.filter((p: any) => p.text && !p.thoughtSignature)
+                ?.map((p: any) => p.text)
+                ?.join('') || '';
+            
+            if (!text) {
+                throw new Error('Gemini가 빈 응답을 반환했습니다.');
+            }
+            return text;
+        }
+
+        // --- Attempt with auto-fallback on quota errors ---
         let lastError: any = null;
         
         // Build attempt list: user key first, then server fallback(s)
@@ -150,19 +190,26 @@ ${contextString}
 
         for (const attempt of attempts) {
             try {
-                const aiModel = createModel(attempt.engine, attempt.key);
-                const result = await generateText({
-                    model: aiModel as any,
-                    messages: messages,
-                    system: systemPrompt,
-                });
+                let responseText: string;
 
-                console.log(`AI Result [${attempt.label}]:`, JSON.stringify({ text: result.text?.substring(0, 100), finishReason: result.finishReason }));
-
-                const responseText = result.text;
-                if (!responseText || responseText.trim().length === 0) {
-                    throw new Error(`AI 모델이 빈 응답을 반환했습니다. (engine: ${attempt.engine})`);
+                if (attempt.engine === 'GEMINI') {
+                    // Direct REST API for Gemini 3 (bypasses SDK parsing bug)
+                    responseText = await callGeminiDirect(attempt.key, systemPrompt, messages);
+                } else {
+                    // Use AI SDK for OpenAI/Claude
+                    const aiModel = createModel(attempt.engine, attempt.key);
+                    const result = await generateText({
+                        model: aiModel as any,
+                        messages: messages,
+                        system: systemPrompt,
+                    });
+                    responseText = result.text || '';
+                    if (!responseText.trim()) {
+                        throw new Error(`AI 모델이 빈 응답을 반환했습니다. (engine: ${attempt.engine})`);
+                    }
                 }
+
+                console.log(`AI Result [${attempt.label}]:`, responseText.substring(0, 100));
 
                 // Build AI SDK Data Stream Protocol response
                 const encoder = new TextEncoder();
@@ -186,12 +233,10 @@ ${contextString}
             } catch (aiError: any) {
                 console.error(`AI attempt [${attempt.label}] failed:`, aiError.message);
                 lastError = aiError;
-                // If quota/billing error, try next key
                 const msg = (aiError.message || '').toLowerCase();
-                if (msg.includes('quota') || msg.includes('billing') || msg.includes('credit') || msg.includes('rate') || msg.includes('limit')) {
-                    continue; // Try next fallback
+                if (msg.includes('quota') || msg.includes('billing') || msg.includes('credit') || msg.includes('rate') || msg.includes('limit') || msg.includes('빈 응답')) {
+                    continue;
                 }
-                // For other errors, don't retry
                 break;
             }
         }
