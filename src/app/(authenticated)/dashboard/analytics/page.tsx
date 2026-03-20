@@ -116,7 +116,15 @@ export default function AnalyticsPage() {
     const renderHeatmap = () => {
         if (!data?.dayHourHeatmap) return null;
 
-        const days = ['일', '월', '화', '수', '목', '금', '토'];
+        const displayDays = [
+            { name: '월', index: 1 },
+            { name: '화', index: 2 },
+            { name: '수', index: 3 },
+            { name: '목', index: 4 },
+            { name: '금', index: 5 },
+            { name: '토', index: 6 },
+            { name: '일', index: 0 }
+        ];
         const hours = Array.from({ length: 24 }, (_, i) => i);
 
         // Find max to calculate opacity
@@ -136,20 +144,20 @@ export default function AnalyticsPage() {
                             <div key={h} className="flex-1 text-center text-[10px] text-[#8B95A1]">{h}시</div>
                         ))}
                     </div>
-                    {days.map((day, dIdx) => (
-                        <div key={day} className="flex mb-1 items-center">
-                            <div className="w-12 flex-shrink-0 text-xs font-medium text-[#4E5968]">{day}요일</div>
+                    {displayDays.map((targetDay) => (
+                        <div key={targetDay.name} className="flex mb-1 items-center">
+                            <div className="w-12 flex-shrink-0 text-xs font-medium text-[#4E5968]">{targetDay.name}요일</div>
                             {hours.map(h => {
-                                const val = matrix[dIdx][h];
+                                const val = matrix[targetDay.index][h];
                                 const intensity = val > 0 ? 0.1 + (val / maxRevenue) * 0.9 : 0;
                                 return (
                                     <div
-                                        key={`${dIdx}-${h}`}
+                                        key={`${targetDay.index}-${h}`}
                                         className="flex-1 h-8 mx-0.5 rounded-sm transition-all hover:ring-2 hover:ring-[#3182F6] relative group"
                                         style={{ backgroundColor: intensity > 0 ? `rgba(49, 130, 246, ${intensity})` : '#F2F4F6' }}
                                     >
                                         <div className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#191F28] text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 shadow-lg">
-                                            {day}요일 {h}시: ₩{formatCurrency(val)} ({((val / (data.totalRevenue || 1)) * 100).toFixed(1)}%)
+                                            {targetDay.name}요일 {h}시: ₩{formatCurrency(val)} ({((val / (data.totalRevenue || 1)) * 100).toFixed(1)}%)
                                         </div>
                                     </div>
                                 );
