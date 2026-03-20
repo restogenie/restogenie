@@ -116,7 +116,7 @@ export async function POST(req: Request) {
                     return createAnthropic({ apiKey: key })('claude-3-5-sonnet-20241022');
                 case 'GEMINI':
                 default:
-                    return createGoogleGenerativeAI({ apiKey: key })('gemini-2.0-flash');
+                    return createGoogleGenerativeAI({ apiKey: key })('gemini-3-flash-preview');
             }
         }
 

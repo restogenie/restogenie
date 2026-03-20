@@ -157,7 +157,7 @@ ${sales.map(s => `- ${DateTime.fromJSDate(s.business_date).toFormat('MM.dd(EEE)'
                         break;
                     case 'GEMINI':
                     default:
-                        aiModel = createGoogleGenerativeAI({ apiKey: rawApiKey })('gemini-2.0-flash');
+                        aiModel = createGoogleGenerativeAI({ apiKey: rawApiKey })('gemini-3-flash-preview');
                         break;
                 }
 

@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
         // 2. Call Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const promptStr = `
 You are an expert F&B menu cataloger. 
