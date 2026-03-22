@@ -11,6 +11,7 @@ import { DateRange } from "react-day-picker";
 import { PresetDateRangePicker } from "@/components/Dashboard/PresetDateRangePicker";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, FunnelChart, Funnel, LabelList, BarChart, Bar, XAxis, YAxis, CartesianGrid, ComposedChart, Area } from 'recharts';
 import * as XLSX from 'xlsx';
+import DemographicMatrix from '@/components/Dashboard/DemographicMatrix';
 
 export default function TrafficDashboardPage() {
     const { currentStore } = useStore();
@@ -331,6 +332,11 @@ export default function TrafficDashboardPage() {
                                 <p className="text-2xl font-extrabold text-[#191F28]">{funnelData.length > 0 ? funnelData[2].rate : 0}%</p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Demographic Matrix */}
+                    <div className="lg:col-span-2">
+                        <DemographicMatrix data={trafficData?.crossAnalysisMatrix || []} />
                     </div>
 
                     {/* Time Matrix Card */}

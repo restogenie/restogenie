@@ -135,6 +135,86 @@ export async function GET(request: Request) {
 
         const demoData = Object.values(demoMatrix).sort((a: any, b: any) => a.age.localeCompare(b.age));
 
+        // --------------------------------------------------------
+        // Cross-Analysis: Time x Gender x Age Proportional Matrix
+        // --------------------------------------------------------
+        // 1. Group Sales by Hour
+        const salesByHour: Record<number, number> = {};
+        const salesRecords = await prisma.sale.findMany({
+            where: {
+                store_id,
+                business_date: {
+                    gte: startFilter,
+                    lte: endFilter
+                }
+            },
+            select: {
+                created_at: true
+            }
+        });
+
+        salesRecords.forEach((s: any) => {
+            if (s.created_at) {
+                const dateObj = new Date(s.created_at);
+                const hour = dateObj.getUTCHours(); // assuming UTC handles Korean time correctly if offsets match, or use luxon
+                // robust timezone parsing
+                const hourStr = DateTime.fromJSDate(dateObj).setZone('Asia/Seoul').toFormat('HH');
+                const h = parseInt(hourStr, 10);
+                salesByHour[h] = (salesByHour[h] || 0) + 1;
+            }
+        });
+
+        // 2. Compute Passes and Visits by Hour & Demographic
+        const hourDemoStats: Record<number, Record<string, { passBy: number, visit: number }>> = {};
+        for (let h = 0; h < 24; h++) hourDemoStats[h] = {};
+
+        traffics.forEach((t: any) => {
+            if (t.visit_time && t.age_group && t.gender) {
+                const hourNum = parseInt(t.visit_time.split(':')[0], 10);
+                const tempAge = t.age_group || 'Unknown';
+                const tempGender = t.gender === 'M' || t.gender === 'Male' || t.gender === '남성' ? '남성' : '여성';
+                const demoKey = `${tempAge} ${tempGender}`;
+
+                if (!isNaN(hourNum) && hourNum >= 0 && hourNum < 24) {
+                    if (!hourDemoStats[hourNum][demoKey]) {
+                        hourDemoStats[hourNum][demoKey] = { passBy: 0, visit: 0 };
+                    }
+                    if (t.widget_name === "유동인구") {
+                        hourDemoStats[hourNum][demoKey].passBy += t.visit_count;
+                    } else if (t.widget_name === "매장 방문") {
+                        hourDemoStats[hourNum][demoKey].visit += t.visit_count;
+                    }
+                }
+            }
+        });
+
+        // 3. Proportional Attribution for Sales & Build Final Array
+        const crossAnalysisMatrix: any[] = [];
+        
+        for (let h = 0; h < 24; h++) {
+            const totalVisitsHour = Object.values(hourDemoStats[h]).reduce((acc, curr) => acc + curr.visit, 0);
+            const totalSalesHour = salesByHour[h] || 0;
+
+            Object.entries(hourDemoStats[h]).forEach(([demoKey, stats]) => {
+                // Calculate estimated sales based on visit proportions
+                let estSales = 0;
+                if (totalVisitsHour > 0) {
+                    const ratio = stats.visit / totalVisitsHour;
+                    estSales = Math.round(totalSalesHour * ratio);
+                }
+
+                if (stats.passBy > 0 || stats.visit > 0 || estSales > 0) {
+                    crossAnalysisMatrix.push({
+                        hour: h,
+                        demographic: demoKey,
+                        passBy: stats.passBy,
+                        visit: stats.visit,
+                        estSales: estSales
+                    });
+                }
+            });
+        }
+
         return NextResponse.json({
             status: "success",
             funnel: {
@@ -145,7 +225,8 @@ export async function GET(request: Request) {
             timeData,
             demoData,
             dayHourHeatmap,
-            totalVisitsForHeatmap
+            totalVisitsForHeatmap,
+            crossAnalysisMatrix
         });
 
     } catch (e: any) {
