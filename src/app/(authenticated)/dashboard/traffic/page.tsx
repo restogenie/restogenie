@@ -9,7 +9,7 @@ import { FileDown, RefreshCw, Users, ShoppingBag, Loader2, FileText } from 'luci
 import { toast } from 'react-hot-toast';
 import { DateRange } from "react-day-picker";
 import { PresetDateRangePicker } from "@/components/Dashboard/PresetDateRangePicker";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, FunnelChart, Funnel, LabelList, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, FunnelChart, Funnel, LabelList, BarChart, Bar, XAxis, YAxis, CartesianGrid, ComposedChart, Area } from 'recharts';
 import * as XLSX from 'xlsx';
 
 export default function TrafficDashboardPage() {
@@ -200,10 +200,32 @@ export default function TrafficDashboardPage() {
     if (!currentStore) return null;
 
     const funnelData = trafficData ? [
-        { value: trafficData.funnel.passBy, name: '유동인구 (매장 앞)', fill: '#6366f1' },
-        { value: trafficData.funnel.visit, name: '매장 방문 (입장)', fill: '#8b5cf6' },
-        { value: trafficData.funnel.sales, name: '결제 (실주문)', fill: '#ec4899' }
+        { name: '유동인구', fullName: '유동인구 (매장 앞)', value: trafficData.funnel.passBy, rate: 100 },
+        { name: '방문', fullName: '매장 방문 (입장)', value: trafficData.funnel.visit, rate: trafficData.funnel.passBy > 0 ? (trafficData.funnel.visit / trafficData.funnel.passBy * 100).toFixed(1) : 0 },
+        { name: '결제', fullName: '결제 (실주문)', value: trafficData.funnel.sales, rate: trafficData.funnel.visit > 0 ? (trafficData.funnel.sales / trafficData.funnel.visit * 100).toFixed(1) : 0 }
     ] : [];
+
+    const CustomTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div className="bg-white p-4 border border-slate-200 shadow-lg rounded-xl min-w-[180px]">
+                    <p className="font-extrabold text-slate-800 mb-2">{data.fullName}</p>
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-slate-500 text-sm">인원/건수</span>
+                        <span className="font-bold text-indigo-600 text-base">{new Intl.NumberFormat('ko-KR').format(data.value)}</span>
+                    </div>
+                    {data.name !== '유동인구' && (
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-100 mt-2">
+                            <span className="text-slate-500 text-xs text-left">이전 단계 대비<br/>전환율</span>
+                            <span className="font-bold text-slate-700">{data.rate}%</span>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="space-y-6 max-w-[1600px] mx-auto animate-in fade-in zoom-in-95 duration-500 pb-20">
@@ -274,22 +296,40 @@ export default function TrafficDashboardPage() {
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {/* Funnel Chart Card */}
                     <div className="bg-white rounded-lg shadow-sm border border-[#F2F4F6] p-6 lg:col-span-2">
-                        <h3 className="text-xl font-bold text-[#191F28] mb-1">고객 전환 퍼널 (Funnel)</h3>
-                        <p className="text-sm text-[#8B95A1] mb-6">유동인구에서 매장 방문, 그리고 실제 결제까지 이어진 전환율을 보여줍니다.</p>
+                        <div className="flex items-center justify-between mb-2">
+                            <div>
+                                <h3 className="text-xl font-bold text-[#191F28]">고객 전환 퍼널 (Funnel Exploration)</h3>
+                                <p className="text-sm text-[#8B95A1] mt-1">유동인구에서 매장 방문, 실제 결제까지 이어진 전환 흐름(Drop-off)을 분석합니다.</p>
+                            </div>
+                        </div>
                         
-                        <div className="h-[400px] w-full">
+                        <div className="h-[380px] w-full mt-6">
                             <ResponsiveContainer width="100%" height="100%">
-                                <FunnelChart>
-                                    <RechartsTooltip formatter={(value: any) => new Intl.NumberFormat('ko-KR').format(value) + ' 명(건)'} />
-                                    <Funnel
-                                        dataKey="value"
-                                        data={funnelData}
-                                        isAnimationActive
-                                    >
-                                        <LabelList position="right" fill="#333D4B" stroke="none" dataKey="name" />
-                                    </Funnel>
-                                </FunnelChart>
+                                <ComposedChart data={funnelData} margin={{ top: 30, right: 30, bottom: 30, left: 30 }}>
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#4E5968', fontSize: 14, fontWeight: 700 }} dy={15} />
+                                    <YAxis hide={true} domain={[0, 'dataMax']} />
+                                    <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                                    
+                                    {/* GA4 style area connecting the bars */}
+                                    <Area type="monotone" dataKey="value" fill="#E8F0FE" stroke="none" activeDot={false} />
+                                    
+                                    {/* Solid bars for the actual values */}
+                                    <Bar dataKey="value" fill="#7B96F5" barSize={80} radius={[4, 4, 0, 0]}>
+                                        <LabelList dataKey="value" position="top" formatter={(val: any) => new Intl.NumberFormat('ko-KR').format(val)} fill="#333D4B" fontSize={15} fontWeight={800} dy={-10} />
+                                    </Bar>
+                                </ComposedChart>
                             </ResponsiveContainer>
+                        </div>
+                        
+                        <div className="mt-2 grid grid-cols-2 gap-4 border-t border-slate-100 pt-6">
+                            <div className="bg-slate-50/70 p-4 rounded-xl text-center">
+                                <p className="text-slate-500 text-sm font-medium mb-1">유입 전환율 (유동인구 → 방문)</p>
+                                <p className="text-2xl font-extrabold text-[#191F28]">{funnelData.length > 0 ? funnelData[1].rate : 0}%</p>
+                            </div>
+                            <div className="bg-slate-50/70 p-4 rounded-xl text-center">
+                                <p className="text-slate-500 text-sm font-medium mb-1">매출 전환율 (방문 → 결제)</p>
+                                <p className="text-2xl font-extrabold text-[#191F28]">{funnelData.length > 0 ? funnelData[2].rate : 0}%</p>
+                            </div>
                         </div>
                     </div>
 
