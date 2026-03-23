@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
         try {
             const secretKey = process.env.JWT_SECRET_KEY || "restogenie_secret_key_random_string_here_12345";
             await jwtVerify(token, new TextEncoder().encode(secretKey));
-            return NextResponse.redirect(new URL('/dashboard', request.url))
+            return NextResponse.redirect(new URL('/chat', request.url))
         } catch (error) {
             // Token invalid, allow login page
         }
@@ -38,5 +38,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/', '/dashboard/:path*', '/mapping/:path*', '/logs/:path*', '/setup/:path*', '/login'],
+    matcher: ['/', '/chat/:path*', '/dashboard/:path*', '/mapping/:path*', '/logs/:path*', '/setup/:path*', '/login'],
 }

@@ -44,9 +44,9 @@ export default function LoginPage() {
             // Store token in cookies for middleware (1 day expiry)
             document.cookie = `admin_token=${data.access_token}; path=/; max-age=86400; SameSite=Strict`;
 
-            // Redirect to dashboard
+            // Redirect to chat
             toast.success("로그인 되었습니다.");
-            router.push("/dashboard");
+            router.push("/chat");
             router.refresh();
 
         } catch (err: any) {

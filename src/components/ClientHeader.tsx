@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/StoreContext";
 import { LogOut, Settings, User, Store as StoreIcon, KeyRound, Menu } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
     Select,
     SelectContent,
@@ -27,6 +27,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 export function ClientHeader() {
     const { stores, currentStore, setCurrentStore, isLoading } = useStore();
     const router = useRouter();
+    const pathname = usePathname();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
 
@@ -46,9 +47,16 @@ export function ClientHeader() {
                 <span className="font-bold text-lg tracking-tight mr-2 md:mr-6 hidden sm:block">RestoGenie</span>
 
                 {/* Desktop Nav */}
-                <nav className="hidden md:flex items-center gap-4 md:gap-6 sm:border-l border-[#F2F4F6] sm:pl-6 h-6 whitespace-nowrap">
-                    <a href="/dashboard" className="text-sm font-bold text-[#191F28] hover:text-[#3182F6] transition-colors">대시보드</a>
-                    <a href="/dashboard/analytics" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">심층 분석</a>
+                <nav className="hidden md:flex items-center gap-4 md:gap-6 sm:border-l border-[#F2F4F6] sm:pl-6 h-full whitespace-nowrap">
+                    <div className="flex bg-[#F2F4F6] rounded-lg p-1 mr-2 items-center">
+                        <a href="/chat" className={`px-4 py-1.5 rounded-md text-[13px] font-bold transition-all ${pathname?.startsWith('/chat') ? 'bg-white text-[#3182F6] shadow-sm' : 'text-[#8B95A1] hover:text-[#4E5968]'}`}>
+                            💬 AI 챗봇
+                        </a>
+                        <a href="/dashboard" className={`px-4 py-1.5 rounded-md text-[13px] font-bold transition-all ${pathname?.startsWith('/dashboard') && !pathname?.startsWith('/dashboard/analytics') && !pathname?.startsWith('/dashboard/traffic') ? 'bg-white text-[#3182F6] shadow-sm' : 'text-[#8B95A1] hover:text-[#4E5968]'}`}>
+                            📊 대시보드
+                        </a>
+                    </div>
+                    <a href="/dashboard/analytics" className={`text-sm font-semibold transition-colors ${pathname?.startsWith('/dashboard/analytics') ? 'text-[#191F28]' : 'text-[#8B95A1] hover:text-[#191F28]'}`}>심층 분석</a>
                     <a href="/dashboard/traffic" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">유동인구 분석</a>
                     <a href="/mapping" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">메뉴 맵핑</a>
                     <a href="/logs" className="text-sm font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">시스템 로그</a>
@@ -63,7 +71,8 @@ export function ClientHeader() {
                     <SheetContent side="left" className="w-[250px] sm:w-[300px] flex flex-col gap-6 pt-12">
                         <SheetTitle className="sr-only">모바일 메뉴</SheetTitle>
                         <nav className="flex flex-col gap-4">
-                            <a href="/dashboard" className="text-base font-bold text-[#191F28] hover:text-[#3182F6] transition-colors">대시보드</a>
+                            <a href="/chat" className="text-base font-bold text-[#191F28] hover:text-[#3182F6] transition-colors">💬 AI 챗봇</a>
+                            <a href="/dashboard" className="text-base font-bold text-[#191F28] hover:text-[#3182F6] transition-colors">📊 대시보드</a>
                             <a href="/dashboard/analytics" className="text-base font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">심층 분석</a>
                             <a href="/dashboard/traffic" className="text-base font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">유동인구 분석</a>
                             <a href="/mapping" className="text-base font-semibold text-[#8B95A1] hover:text-[#191F28] transition-colors">메뉴 맵핑</a>
