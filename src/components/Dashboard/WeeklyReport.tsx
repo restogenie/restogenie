@@ -132,10 +132,8 @@ export default function WeeklyReportDashboard() {
                         <li className="flex items-start mt-4 pt-4 border-t border-blue-100/50">
                             <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full mr-3 mt-2 flex-shrink-0"></span> 
                             <span className="leading-relaxed">
-                            <strong>AI 진단 결과:</strong> 
-                            {parseFloat(reportData.keyMetricsData[0].growth) >= 5 ? ' 훌륭한 성장세를 보이고 있습니다. 객단가 및 재방문율 지표를 유지하는데 집중하세요.' : 
-                            parseFloat(reportData.keyMetricsData[0].growth) <= -5 ? ' 매출 하락의 원인을 다각도로 분석해야 합니다. 전환율 방어를 위한 프로모션이 필요할 수 있습니다.' :
-                            ' 전반적으로 안정적인 보합세를 유지하고 있습니다. 배달 채널이나 신규 방문객 유입(트래픽) 확대를 테스트해볼 시점입니다.'}
+                            <strong>AI 통합 진단:</strong> 
+                            <span className="ml-1 text-slate-700">{reportData.aiInsight}</span>
                             </span>
                         </li>
                         </ul>

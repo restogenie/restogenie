@@ -31,40 +31,6 @@ export default function AnalyticsPage() {
     const [startDate, setStartDate] = useState(format(subDays(new Date(), 6), 'yyyy-MM-dd'));
     const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
-    // Report State
-    const [reportData, setReportData] = useState<any>(null);
-    const [reportLoading, setReportLoading] = useState(false);
-    const [reportActiveTab, setReportActiveTab] = useState('insight');
-
-    const fetchReport = async () => {
-        if (!currentStore) return;
-        if (reportData) return; // Already fetched
-        setReportLoading(true);
-        try {
-            const currentDate = new Date(endDate);
-            const year = currentDate.getFullYear();
-            const d = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()));
-            const dayNum = d.getUTCDay() || 7;
-            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-            const weekNumber = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1)/7);
-
-            const res = await axios.post('/api/v1/reports', { storeId: currentStore.id, year, weekNumber });
-            if (res.data?.status === 'success' && res.data?.data) {
-                setReportData(res.data.data);
-            }
-        } catch (err: any) {
-            console.error('Failed to fetch analytics', err);
-            if (err.response?.status === 401) {
-                window.location.href = '/login';
-            } else {
-                toast.error("리포트 생성 실패: " + (err.response?.data?.detail || err.message));
-            }
-        } finally {
-            setReportLoading(false);
-        }
-    };
-
     const fetchAnalytics = async (isRefresh = false) => {
         if (!currentStore) return;
 
@@ -195,7 +161,7 @@ export default function AnalyticsPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="analytics" onValueChange={(val) => { if (val === 'report') fetchReport(); }} className="w-full">
+            <Tabs defaultValue="analytics" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6 max-w-lg shadow-sm border border-[#E5E8EB]">
                     <TabsTrigger value="analytics" className="text-sm font-bold data-[state=active]:bg-blue-600 data-[state=active]:text-white">심층 매출 분석</TabsTrigger>
                     <TabsTrigger value="report" className="text-sm font-bold data-[state=active]:bg-indigo-600 data-[state=active]:text-white">주간 리포트 (웹뷰어)</TabsTrigger>
