@@ -202,10 +202,10 @@ export default function ChatPage() {
     );
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-white">
+        <div className="flex h-full w-full overflow-hidden bg-white relative">
             
             {/* LEFT 70% : Main Chat UI */}
-            <div className="flex-1 flex flex-col border-r border-[#E5E8EB] relative">
+            <div className="flex-1 flex flex-col border-r border-[#E5E8EB] w-full min-w-0">
                 
                 {/* Header of Chat */}
                 <div className="h-14 border-b border-[#E5E8EB] flex items-center justify-between px-6 bg-white shrink-0">
@@ -232,11 +232,11 @@ export default function ChatPage() {
                     </div>
                 </div>
 
-                <div className="flex-1 flex overflow-hidden">
+                <div className="flex-1 flex overflow-hidden relative">
                     {/* Chat History Sidebar */}
                     {showSidebar && (
-                        <div className="w-[260px] border-r border-[#E5E8EB] bg-[#F9FAFB] flex flex-col shrink-0">
-                            <div className="p-4 border-b border-[#E5E8EB] flex justify-between items-center">
+                        <div className="absolute inset-y-0 left-0 z-20 md:static w-[260px] border-r border-[#E5E8EB] bg-[#F9FAFB] flex flex-col shrink-0 h-full shadow-lg md:shadow-none">
+                            <div className="p-4 border-b border-[#E5E8EB] flex justify-between items-center bg-[#F9FAFB]">
                                 <span className="font-bold text-sm text-[#4E5968]">대화 기록</span>
                                 <button onClick={startNewSession} className="p-1.5 hover:bg-[#E5E8EB] rounded-md transition-colors" title="새 대화">
                                     <Plus className="w-4 h-4 text-[#4E5968]" />
@@ -261,36 +261,37 @@ export default function ChatPage() {
                     )}
 
                     {/* Chat Messages */}
-                    <div className="flex-1 flex flex-col relative w-full">
-                        <ScrollArea className="flex-1 px-4 lg:px-24 xl:px-48 bg-white">
-                            {messages.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-center space-y-6 pt-32 pb-20">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg mb-2">
-                                        <Sparkles className="w-8 h-8 text-white" />
+                    <div className="flex-1 flex flex-col relative w-full overflow-hidden" onClick={() => { if(window.innerWidth < 768 && showSidebar) setShowSidebar(false); }}>
+                        <ScrollArea className="flex-1 bg-white">
+                            <div className="max-w-3xl mx-auto w-full px-4 md:px-6">
+                                {messages.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-center space-y-6 pt-32 pb-20">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg mb-2">
+                                            <Sparkles className="w-8 h-8 text-white" />
+                                        </div>
+                                        <h1 className="text-2xl font-bold text-[#191F28] tracking-tight">어떤 인사이트가 필요하신가요?</h1>
+                                        <p className="text-[#8B95A1] text-sm max-w-[400px] leading-relaxed">
+                                            우측의 추천 질문을 클릭하거나 하단 입력창에 점포 경영, 마케팅, 고객 피드백 등 자유롭게 물어보세요.
+                                        </p>
                                     </div>
-                                    <h1 className="text-2xl font-bold text-[#191F28] tracking-tight">어떤 인사이트가 필요하신가요?</h1>
-                                    <p className="text-[#8B95A1] text-sm max-w-[400px] leading-relaxed">
-                                        우측의 추천 질문을 클릭하거나 하단 입력창에 점포 경영, 마케팅, 고객 피드백 등 자유롭게 물어보세요.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-8 py-8">
+                                ) : (
+                                    <div className="space-y-8 py-8 w-full">
                                     {messages.map((m: any) => {
                                         const cleanContent = m.content.replace(/<CANVAS>[\s\S]*?<\/CANVAS>/g, "*(리포트 문서가 우측 뷰어에 생성되었습니다)*");
                                         return (
                                             <div key={m.id} className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                                <div className="flex gap-4 max-w-[85%]">
+                                                <div className="flex gap-4 max-w-[85%] sm:max-w-full">
                                                     {m.role !== 'user' && (
                                                         <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0 mt-1">
                                                             <Bot className="w-5 h-5 text-indigo-600" />
                                                         </div>
                                                     )}
-                                                    <div className={`rounded-2xl px-5 py-4 text-[15px] leading-relaxed ${
+                                                    <div className={`rounded-2xl px-5 py-4 text-[15px] leading-relaxed break-words whitespace-pre-wrap ${
                                                         m.role === 'user' 
-                                                            ? 'bg-[#F2F4F6] text-[#191F28]' 
-                                                            : 'text-[#333D4B]'
+                                                            ? 'bg-[#F2F4F6] text-[#191F28] self-end' 
+                                                            : 'text-[#333D4B] w-full min-w-0 overflow-hidden'
                                                     }`}>
-                                                        <div className="markdown-prose prose-sm xl:prose-base max-w-none">
+                                                        <div className="markdown-prose prose-sm xl:prose-base max-w-none w-full break-words">
                                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                                 {cleanContent}
                                                             </ReactMarkdown>
@@ -314,10 +315,11 @@ export default function ChatPage() {
                                     <div ref={messagesEndRef} />
                                 </div>
                             )}
+                            </div>
                         </ScrollArea>
 
                         {/* Input Area */}
-                        <div className="p-4 lg:px-24 xl:px-48 bg-white border-t border-transparent bg-gradient-to-t from-white via-white to-transparent">
+                        <div className="w-full bg-white border-t border-transparent bg-gradient-to-t from-white via-white to-transparent pt-2 pb-4 px-4 sm:px-6 z-10">
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 if (!isKeyValid) setShowKeyPrompt(true);
@@ -348,7 +350,7 @@ export default function ChatPage() {
                                 </button>
                             </form>
                             <p className="text-center text-[11px] text-[#8B95A1] mt-3">
-                                AI가 생성한 인사이트는 참고용이며 완벽하지 않을 수 있습니다. 중요한 의사결정 시 실제 대시보드 데이터를 한 번 더 확인하세요.
+                                AI가 생성한 인사이트는 참고용이며 완벽하지 않을 수 있습니다.
                             </p>
                         </div>
                     </div>
@@ -376,7 +378,7 @@ export default function ChatPage() {
             </div>
 
             {/* RIGHT 30% : BI / Canvas Panel */}
-            <div className="w-[30%] min-w-[320px] max-w-[450px] bg-[#FAFAFA] border-l flex flex-col h-full right-panel-anim shrink-0">
+            <div className="hidden lg:flex w-[30%] min-w-[320px] max-w-[450px] bg-[#FAFAFA] border-l flex-col h-full right-panel-anim shrink-0">
                 {canvasContent ? (
                     // Canvas Mode View
                     <div className="flex flex-col h-full bg-white shadow-[-10px_0_30px_rgba(0,0,0,0.03)] relative z-10 transition-all duration-300">
@@ -442,20 +444,20 @@ export default function ChatPage() {
                                 </div>
 
                                 {/* Suggested Prompts */}
-                                <div className="pt-6">
+                                <div className="pt-6 pb-6">
                                     <h4 className="font-semibold text-sm text-[#4E5968] mb-3">바로 질문하기 (Shortcuts)</h4>
                                     <div className="flex flex-col gap-2">
-                                        <button onClick={() => handleShortcut("이번 주와 지난 주 핵심 지표의 차이를 3가지 원인으로 진단해 줘. <CANVAS> 형태로 리포트를 짜줘.")} className="w-full text-left p-3 rounded-lg bg-white border border-[#E5E8EB] hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors group flex justify-between items-center shadow-sm">
-                                            <span className="text-[13px] text-[#4E5968] font-medium leading-tight">주간 핵심지표 증감 원인 분석하기</span>
-                                            <ChevronRight className="w-4 h-4 text-[#B0B8C1] group-hover:text-indigo-400 group-hover:translate-x-1 transition-transform shrink-0" />
+                                        <button onClick={() => handleShortcut("이번 주와 지난 주 핵심 지표의 차이를 3가지 원인으로 진단해 줘. <CANVAS> 형태로 리포트를 짜줘.")} className="w-full text-left p-3 rounded-lg bg-white border border-[#E5E8EB] hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors group flex justify-between items-start shadow-sm">
+                                            <span className="text-[13px] text-[#4E5968] font-medium leading-normal break-words pr-2">주간 핵심지표 증감 원인 분석하기</span>
+                                            <ChevronRight className="w-4 h-4 text-[#B0B8C1] group-hover:text-indigo-400 group-hover:translate-x-1 transition-transform shrink-0 mt-0.5" />
                                         </button>
-                                        <button onClick={() => handleShortcut("방문객 전환율(퍼널)을 올리기 위한 당장 실행 가능한 액션 플랜 3개를 제안해 줘. <CANVAS> 리포트 형태로.")} className="w-full text-left p-3 rounded-lg bg-white border border-[#E5E8EB] hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors group flex justify-between items-center shadow-sm">
-                                            <span className="text-[13px] text-[#4E5968] font-medium leading-tight">매장 전환율 상승 액션 플랜 3가지</span>
-                                            <ChevronRight className="w-4 h-4 text-[#B0B8C1] group-hover:text-indigo-400 group-hover:translate-x-1 transition-transform shrink-0" />
+                                        <button onClick={() => handleShortcut("방문객 전환율(퍼널)을 올리기 위한 당장 실행 가능한 액션 플랜 3개를 제안해 줘. <CANVAS> 리포트 형태로.")} className="w-full text-left p-3 rounded-lg bg-white border border-[#E5E8EB] hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors group flex justify-between items-start shadow-sm">
+                                            <span className="text-[13px] text-[#4E5968] font-medium leading-normal break-words pr-2">매장 전환율 상승 액션 플랜 3가지</span>
+                                            <ChevronRight className="w-4 h-4 text-[#B0B8C1] group-hover:text-indigo-400 group-hover:translate-x-1 transition-transform shrink-0 mt-0.5" />
                                         </button>
-                                        <button onClick={() => handleShortcut("객단가를 높이기 위해 잘나가는 메뉴(ABC분석)를 활용한 마케팅 방안을 <CANVAS> 보고서 구조로 정리해 줘.")} className="w-full text-left p-3 rounded-lg bg-white border border-[#E5E8EB] hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors group flex justify-between items-center shadow-sm">
-                                            <span className="text-[13px] text-[#4E5968] font-medium leading-tight">우수 메뉴(ABC) 활용 객단가 방안</span>
-                                            <ChevronRight className="w-4 h-4 text-[#B0B8C1] group-hover:text-indigo-400 group-hover:translate-x-1 transition-transform shrink-0" />
+                                        <button onClick={() => handleShortcut("객단가를 높이기 위해 잘나가는 메뉴(ABC분석)를 활용한 마케팅 방안을 <CANVAS> 보고서 구조로 정리해 줘.")} className="w-full text-left p-3 rounded-lg bg-white border border-[#E5E8EB] hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors group flex justify-between items-start shadow-sm">
+                                            <span className="text-[13px] text-[#4E5968] font-medium leading-normal break-words pr-2">우수 메뉴(ABC) 활용 객단가 방안</span>
+                                            <ChevronRight className="w-4 h-4 text-[#B0B8C1] group-hover:text-indigo-400 group-hover:translate-x-1 transition-transform shrink-0 mt-0.5" />
                                         </button>
                                     </div>
                                 </div>
